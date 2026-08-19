@@ -74,7 +74,7 @@ Phase 5 adds dedicated running analytics (never inside API routes):
 - Isolated 5K estimate (`performance_prediction.estimate_5k_time`, Riegel scaling)
 - Dashboard placeholders replaced with those metrics when data exists
 
-The heart-rate band is a query parameter (`hr_min`, `hr_max`; default 140–150). The UI may remember it in `localStorage`. It is not persisted in PostgreSQL and is not a personal Zone 2. No GPS columns were added. Calculations live in `running_metrics.py`, `running_analytics.py`, `performance_prediction.py`, `analytics.py`, and `dashboard.py` — never in an API route. Every analytics query is scoped to the session user.
+The heart-rate band is a query parameter (`hr_min`, `hr_max`; default 140–150). The UI may remember it in `localStorage` and must send it on Easy Running, Trends, and the dashboard easy-pace card. It is not persisted in PostgreSQL and is not a personal Zone 2.
 
 APIs: `GET /api/v1/analytics/easy-running`, `GET /api/v1/analytics/trends`, `GET /api/v1/analytics/aerobic-efficiency`. Dashboard calls the same services rather than reimplementing the maths.
 

@@ -44,7 +44,7 @@ from app.services.running_analytics import (
 from app.services.running_analytics import (
     parse_trend_range as parse_trend_range,
 )
-from app.services.running_metrics import HeartRateBand, default_easy_heart_rate_band
+from app.services.running_metrics import HeartRateBand
 
 DIRECTION_LABELS = {
     "improving": "Improving",
@@ -262,9 +262,11 @@ async def dashboard_metrics_for_user(
     *,
     user_id: uuid.UUID,
     now: datetime,
+    hr_min: int,
+    hr_max: int,
 ) -> tuple[FiveKEstimateMetric, EasyPaceMetric, AerobicEfficiencyMetric]:
     observations = await load_observations_for_user(session, user_id=user_id)
-    band = default_easy_heart_rate_band()
+    band = parse_heart_rate_band(hr_min, hr_max)
     five_k = five_k_metric(estimate_5k_time(observations, now=now))
     easy = easy_pace_metric(calculate_easy_pace_trend(observations, band))
     aerobic = aerobic_metric(calculate_aerobic_efficiency(observations))
