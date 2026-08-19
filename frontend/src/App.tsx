@@ -5,13 +5,16 @@ import { AuthProvider } from "@/features/auth/AuthContext";
 import { RequireAuth } from "@/features/auth/ProtectedRoute";
 import { ActivitiesPage } from "@/pages/ActivitiesPage";
 import { ActivityDetailPage } from "@/pages/ActivityDetailPage";
+import { EasyRunningPage } from "@/pages/EasyRunningPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
+import { TrendsPage } from "@/pages/TrendsPage";
 import { AccountPage } from "@/pages/settings/AccountPage";
 import { PlaceholderSettingsPage } from "@/pages/settings/PlaceholderSettingsPage";
+import { PreferencesPage } from "@/pages/settings/PreferencesPage";
 import { SettingsLayout } from "@/pages/settings/SettingsLayout";
 import { VerifyEmailPage } from "@/pages/VerifyEmailPage";
 
@@ -27,6 +30,22 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route
+              path="/easy-running"
+              element={
+                <RequireAuth>
+                  <EasyRunningPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/trends"
+              element={
+                <RequireAuth>
+                  <TrendsPage />
+                </RequireAuth>
+              }
+            />
             <Route
               path="/activities"
               element={
@@ -71,15 +90,7 @@ export default function App() {
                   />
                 }
               />
-              <Route
-                path="preferences"
-                element={
-                  <PlaceholderSettingsPage
-                    title="Preferences"
-                    body="Heart-rate ranges and display units will be configurable here. Nothing is hard-coded to a personal Zone 2."
-                  />
-                }
-              />
+              <Route path="preferences" element={<PreferencesPage />} />
             </Route>
           </Route>
         </Routes>

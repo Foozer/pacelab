@@ -2,7 +2,7 @@
 
 PaceLab is a running analytics platform. The product question is whether a runner's fitness is actually improving — not a recreation of Garmin Connect.
 
-This document records decisions that later phases must preserve.
+This document records decisions that later phases must preserve. **Phase 5 is implemented** (analytics services, Easy Running, Trends, labelled 5K estimate). Privacy export, live Garmin OAuth, FIT-file import, and production deploy docs are not started.
 
 ## System shape
 
@@ -52,19 +52,47 @@ Phase 4 adds a personal dashboard and richer activity views:
 
 - Authenticated home dashboard answering “How is my running going?”
 - Last-7-day volume, recent runs, and a pace/heart-rate chart over recent activities
-- Explicit placeholders for 5K estimate, easy pace, and aerobic efficiency (Phase 5)
+- Slots for 5K estimate, easy pace, and aerobic efficiency (filled with real payloads in Phase 5)
 - Activity history with date and type filters plus server-side pagination
 - Activity detail with summary stats and pace, heart-rate, and pace-versus-HR charts
 
 Charts use Recharts 3 (React SVG components with built-in tooltips). `react-is` is required as a peer of that library. No GPS is stored or drawn.
-
-Analytics that belong in Phase 5 (aerobic efficiency algorithm, easy-running page, trends page, 5K estimate) must not be invented here. Any calculation that is added lives in `app/services/running_metrics.py` or `app/services/dashboard.py`, never in an API route. Estimates must be labelled as estimates.
 
 Date filters on `GET /api/v1/activities` are inclusive calendar dates interpreted in UTC (`from_date` start of day through end of `to_date`).
 
 Time-series samples do **not** store latitude/longitude. GPS is sensitive location data and is not required for MVP pace/HR analytics. A future Garmin mapping can drop those fields even if the official API returns them.
 
 `provider_connections` records `last_sync_at` only. Encrypted Garmin OAuth tokens belong on a later `GarminConnection` (or extra columns) and must never appear in API responses.
+
+## Phase 5 scope
+
+Phase 5 adds dedicated running analytics (never inside API routes):
+
+- Aerobic efficiency: moving speed / heart rate on easy/moderate runs, with Improving / Stable / Not enough data copy
+- Easy Running page: configurable heart-rate band (default 140–150 bpm, query parameter, optional browser storage)
+- Trends page: pace, heart rate, weekly distance, frequency, pace at comparable HR, with range presets
+- Isolated 5K estimate (`performance_prediction.estimate_5k_time`, Riegel scaling)
+- Dashboard placeholders replaced with those metrics when data exists
+
+The heart-rate band is a query parameter (`hr_min`, `hr_max`; default 140–150). The UI may remember it in `localStorage`. It is not persisted in PostgreSQL and is not a personal Zone 2. No GPS columns were added. Calculations live in `running_metrics.py`, `running_analytics.py`, `performance_prediction.py`, `analytics.py`, and `dashboard.py` — never in an API route. Every analytics query is scoped to the session user.
+
+APIs: `GET /api/v1/analytics/easy-running`, `GET /api/v1/analytics/trends`, `GET /api/v1/analytics/aerobic-efficiency`. Dashboard calls the same services rather than reimplementing the maths.
+
+### Easy running
+
+A run is included when it is a run type **and** either its activity-average heart rate sits in the requested band, or it has enough moving samples whose heart rate sits in that band. Aggregates prefer those in-band samples. Pace at a comparable heart rate scales observed pace to the midpoint of the band, assuming speed is roughly proportional to heart rate over easy/moderate running. That adjustment is for comparability, not a physiological model.
+
+### Trends
+
+`range` is one of `4w`, `8w` (default), `3m`, `6m`, `1y`, `all`. Weekly distance and frequency use Monday-based UTC weeks. Comparable-pace series uses the same heart-rate band as Easy Running.
+
+### Aerobic efficiency
+
+For each run-type activity, pause samples (speed ≤ 0.4 m/s) and implausible heart rates (outside 80–220 bpm) are dropped. Remaining samples give mean moving speed and mean heart rate. The score is **mean speed (m/s) / mean heart rate**. Higher is more speed at a similar heart rate. Efforts with mean HR above 168 bpm are excluded so hard sessions are not mixed with easy/moderate running. Direction compares the first half of qualifying runs with the last half; a 3% rise is “improving”. This is an application metric, not a VO2 or medical test.
+
+### 5K estimate
+
+`estimate_5k_time` scales recent 3–16 km runs with Riegel’s formula `T * (5000 / D) ** 1.06`, then takes the median of the three fastest of those times. At least two qualifying runs in 56 days are required. The number is an estimate, not a race prediction. A later model can replace the function body without changing the API shape (`available`, `estimated_seconds`, `note`).
 
 ## Authentication model
 
@@ -88,7 +116,7 @@ Activity ingestion is isolated behind a provider interface:
 - `MockActivityProvider` for development, tests, and seed data
 - `GarminActivityProvider` as a stub until official developer credentials exist (Phase 7). The stub raises; it does not invent HTTP endpoints.
 
-Until Garmin access is granted, PaceLab remains fully usable with mock data and optional FIT-file import.
+Until Garmin access is granted, PaceLab remains fully usable with mock (and seed) data. FIT-file import is not implemented.
 
 OAuth client secrets and tokens will live in environment variables / encrypted database columns. They are never returned by the API and never written to logs.
 

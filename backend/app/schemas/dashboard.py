@@ -1,22 +1,16 @@
-"""Dashboard API schemas. Phase 5 metrics are explicit placeholders, not zeros."""
+"""Dashboard API schemas. Phase 5 metrics are computed when data exists."""
 
 from datetime import datetime
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.activity import ActivitySummary
-
-
-class UpcomingMetric(BaseModel):
-    """A metric that has a dashboard slot but is not calculated until a later phase."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    available: Literal[False] = False
-    label: str
-    note: str
+from app.schemas.analytics import (
+    AerobicEfficiencyMetric,
+    EasyPaceMetric,
+    FiveKEstimateMetric,
+)
 
 
 class WeeklyVolumePublic(BaseModel):
@@ -45,6 +39,6 @@ class DashboardResponse(BaseModel):
     weekly: WeeklyVolumePublic
     recent_activities: list[ActivitySummary]
     pace_heart_rate_trend: list[PaceHeartRatePoint]
-    five_k_estimate: UpcomingMetric
-    easy_pace: UpcomingMetric
-    aerobic_efficiency: UpcomingMetric
+    five_k_estimate: FiveKEstimateMetric
+    easy_pace: EasyPaceMetric
+    aerobic_efficiency: AerobicEfficiencyMetric

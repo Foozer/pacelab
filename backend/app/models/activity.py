@@ -1,7 +1,7 @@
 """Normalised running activities owned by a PaceLab user.
 
 GPS coordinates are intentionally omitted: location data is sensitive and is not
-required for Phase 3 or for the MVP analytics in later phases.
+required for MVP pace/heart-rate analytics.
 """
 
 from __future__ import annotations

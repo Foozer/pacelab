@@ -63,9 +63,11 @@ def test_dashboard_aggregates_current_user_only(client: TestClient) -> None:
     assert [item["id"] for item in body["recent_activities"]] == [other.json()["id"]]
     assert all(point["activity_id"] != alpha_id for point in body["pace_heart_rate_trend"])
     assert body["five_k_estimate"]["available"] is False
-    assert body["easy_pace"]["available"] is False
-    assert body["aerobic_efficiency"]["available"] is False
     assert "estimate" in body["five_k_estimate"]["note"].lower()
+    assert body["easy_pace"]["available"] is True
+    assert body["easy_pace"]["run_count"] == 1
+    assert body["aerobic_efficiency"]["available"] is True
+    assert body["aerobic_efficiency"]["qualifying_run_count"] == 1
 
 
 def test_dashboard_weekly_ignores_older_runs(client: TestClient) -> None:

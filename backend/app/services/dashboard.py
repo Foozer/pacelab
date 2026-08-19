@@ -1,8 +1,8 @@
 """Assemble the authenticated dashboard from stored activities.
 
 Identity is always the session user passed in by the caller. Calculations
-delegate to running_metrics; this module only loads rows and shapes the
-response.
+delegate to running_metrics and analytics services; this module only loads
+rows and shapes the response.
 """
 
 from __future__ import annotations
@@ -18,9 +18,9 @@ from app.schemas.activity import ActivitySummary
 from app.schemas.dashboard import (
     DashboardResponse,
     PaceHeartRatePoint,
-    UpcomingMetric,
     WeeklyVolumePublic,
 )
+from app.services.analytics import dashboard_metrics_for_user
 from app.services.running_metrics import (
     VolumeRow,
     calculate_pace,
@@ -30,22 +30,6 @@ from app.services.running_metrics import (
 RECENT_ACTIVITY_LIMIT = 5
 TREND_ACTIVITY_LIMIT = 24
 WEEK_WINDOW = timedelta(days=7)
-
-FIVE_K_PLACEHOLDER = UpcomingMetric(
-    label="5K estimate",
-    note="This will be a labelled estimate from your recent running, not a race prediction. "
-    "The calculation arrives in a later phase.",
-)
-EASY_PACE_PLACEHOLDER = UpcomingMetric(
-    label="Easy pace",
-    note="We will look at your pace on easier runs at a similar heart rate. "
-    "That analysis is not calculated yet.",
-)
-AEROBIC_PLACEHOLDER = UpcomingMetric(
-    label="Aerobic efficiency",
-    note="PaceLab will say whether your pace at a comparable heart rate is improving. "
-    "That is an application metric, not a medical measurement, and is not calculated yet.",
-)
 
 
 async def get_dashboard_for_user(
@@ -116,6 +100,12 @@ async def get_dashboard_for_user(
             )
         )
 
+    five_k, easy_pace, aerobic = await dashboard_metrics_for_user(
+        session,
+        user_id=user_id,
+        now=moment,
+    )
+
     return DashboardResponse(
         weekly=WeeklyVolumePublic(
             run_count=volume.run_count,
@@ -126,7 +116,7 @@ async def get_dashboard_for_user(
         ),
         recent_activities=[ActivitySummary.model_validate(item) for item in recent],
         pace_heart_rate_trend=trend_points,
-        five_k_estimate=FIVE_K_PLACEHOLDER,
-        easy_pace=EASY_PACE_PLACEHOLDER,
-        aerobic_efficiency=AEROBIC_PLACEHOLDER,
+        five_k_estimate=five_k,
+        easy_pace=easy_pace,
+        aerobic_efficiency=aerobic,
     )

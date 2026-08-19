@@ -4,8 +4,13 @@ import { Link } from "react-router-dom";
 import { DashboardTrendChart } from "@/components/charts/RunCharts";
 import { FormError } from "@/components/Form";
 import { fetchDashboard, formatAuthError } from "@/lib/api";
-import { formatDateTime, formatDistance, formatDuration, formatPace } from "@/lib/format";
-import type { DashboardResponse, UpcomingMetric } from "@/types/activity";
+import { formatDateTime, formatDistance, formatDuration, formatPace, formatPaceSeconds } from "@/lib/format";
+import type {
+  AerobicEfficiencyMetric,
+  DashboardResponse,
+  EasyPaceMetric,
+  FiveKEstimateMetric,
+} from "@/types/activity";
 
 type LoadState =
   | { status: "loading" }
@@ -53,8 +58,8 @@ export function DashboardPage() {
       <div>
         <h1 className="font-display text-3xl">How is my running going?</h1>
         <p className="mt-3 max-w-2xl text-ink-soft">
-          A quiet view of recent volume, your last runs, and pace versus heart rate. Fitness
-          estimates come later — nothing here is a medical measurement.
+          Recent volume, last runs, and whether easy pace at a similar heart rate is moving.
+          Figures are application estimates, not medical measurements or race predictions.
         </p>
       </div>
 
@@ -70,9 +75,9 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <WeeklyCard weekly={data.weekly} />
-        <PlaceholderCard metric={data.easy_pace} />
-        <PlaceholderCard metric={data.five_k_estimate} />
-        <PlaceholderCard metric={data.aerobic_efficiency} />
+        <EasyPaceCard metric={data.easy_pace} />
+        <FiveKCard metric={data.five_k_estimate} />
+        <AerobicCard metric={data.aerobic_efficiency} />
       </div>
 
       <section aria-labelledby="recent-runs">
@@ -129,12 +134,67 @@ function WeeklyCard({ weekly }: { weekly: DashboardResponse["weekly"] }) {
   );
 }
 
-function PlaceholderCard({ metric }: { metric: UpcomingMetric }) {
+function EasyPaceCard({ metric }: { metric: EasyPaceMetric }) {
   return (
-    <article className="border border-dashed border-rule px-4 py-4">
-      <h2 className="text-xs tracking-wide text-ink-soft uppercase">{metric.label}</h2>
-      <p className="font-display mt-3 text-2xl text-ink-soft">Not calculated yet</p>
-      <p className="mt-2 text-sm text-ink-soft">{metric.note}</p>
+    <article className="border border-rule bg-paper-2 px-4 py-4">
+      <h2 className="text-xs tracking-wide text-ink-soft uppercase">Easy pace</h2>
+      {metric.available ? (
+        <>
+          <p className="font-display mt-3 text-2xl">{formatPaceSeconds(metric.pace_seconds_per_km)}</p>
+          <p className="mt-2 text-sm text-ink">{metric.headline}</p>
+          <p className="mt-2 text-sm text-ink-soft">
+            From {metric.run_count} runs around {metric.heart_rate_min}–{metric.heart_rate_max} bpm.{" "}
+            <Link to="/easy-running" className="text-moss-deep underline">
+              Easy running
+            </Link>
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="font-display mt-3 text-2xl">{metric.headline}</p>
+          <p className="mt-2 text-sm text-ink-soft">{metric.note}</p>
+        </>
+      )}
+    </article>
+  );
+}
+
+function FiveKCard({ metric }: { metric: FiveKEstimateMetric }) {
+  return (
+    <article className="border border-rule bg-paper-2 px-4 py-4">
+      <h2 className="text-xs tracking-wide text-ink-soft uppercase">5K estimate</h2>
+      {metric.available ? (
+        <>
+          <p className="font-display mt-3 text-3xl">{formatDuration(metric.estimated_seconds)}</p>
+          <p className="mt-2 text-sm text-ink">{metric.headline}</p>
+          <p className="mt-2 text-sm text-ink-soft">{metric.note}</p>
+        </>
+      ) : (
+        <>
+          <p className="font-display mt-3 text-2xl">{metric.headline}</p>
+          <p className="mt-2 text-sm text-ink-soft">{metric.note}</p>
+        </>
+      )}
+    </article>
+  );
+}
+
+function AerobicCard({ metric }: { metric: AerobicEfficiencyMetric }) {
+  return (
+    <article className="border border-rule bg-paper-2 px-4 py-4">
+      <h2 className="text-xs tracking-wide text-ink-soft uppercase">Aerobic efficiency</h2>
+      {metric.available ? (
+        <>
+          <p className="font-display mt-3 text-2xl">{metric.direction_label}</p>
+          <p className="mt-2 text-sm text-ink">{metric.headline}</p>
+          <p className="mt-2 text-sm text-ink-soft">{metric.note}</p>
+        </>
+      ) : (
+        <>
+          <p className="font-display mt-3 text-2xl">{metric.headline}</p>
+          <p className="mt-2 text-sm text-ink-soft">{metric.note}</p>
+        </>
+      )}
     </article>
   );
 }

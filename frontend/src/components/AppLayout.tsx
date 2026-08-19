@@ -30,6 +30,22 @@ export function AppLayout() {
                   Dashboard
                 </NavLink>
                 <NavLink
+                  to="/easy-running"
+                  className={({ isActive }) =>
+                    isActive ? "text-moss-deep underline" : "text-ink-soft hover:text-ink"
+                  }
+                >
+                  Easy running
+                </NavLink>
+                <NavLink
+                  to="/trends"
+                  className={({ isActive }) =>
+                    isActive ? "text-moss-deep underline" : "text-ink-soft hover:text-ink"
+                  }
+                >
+                  Trends
+                </NavLink>
+                <NavLink
                   to="/activities"
                   className={({ isActive }) =>
                     isActive ? "text-moss-deep underline" : "text-ink-soft hover:text-ink"

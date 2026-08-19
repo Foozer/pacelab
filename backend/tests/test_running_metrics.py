@@ -1,4 +1,4 @@
-"""Unit tests for simple running aggregates (Phase 4)."""
+"""Unit tests for simple running aggregates."""
 
 from datetime import UTC, datetime
 
