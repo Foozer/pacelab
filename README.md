@@ -6,19 +6,21 @@ This repository is a monorepo. The first user is the developer, but the architec
 
 Garmin Connect is **not** scraped. When live import exists, it will use the official Garmin Connect Developer Program and OAuth 2.0. Until those credentials are available, the app runs without Garmin and stores PaceLab accounts independently.
 
-## Current status — Phase 4
+## Current status — Phase 5
 
 Completed:
 
 - Phase 1 foundation (Compose, FastAPI, PostgreSQL, React, health, migrations)
 - Phase 2 authentication (sessions, CSRF, Argon2id, account pages)
 - Phase 3 activity import (models, mock provider, sync, seed)
-- Dashboard answering “How is my running going?” (last-7-day volume, recent runs, pace/HR chart)
-- Activity history with date and type filters and server-side pagination
-- Activity detail with summary stats and pace, heart-rate, and pace-versus-HR charts (Recharts)
-- Simple pace and volume helpers in `backend/app/services/running_metrics.py`
+- Phase 4 dashboard, activity history, and activity-detail charts
+- Aerobic efficiency (pace at a similar heart rate; Improving / Stable / Not enough data)
+- Easy Running page with a configurable heart-rate range (default 140–150 bpm)
+- Trends page (pace, HR, weekly distance, frequency, comparable pace; 4w–all)
+- Simple 5K estimate (Riegel scaling, labelled as an estimate)
+- Dashboard cards for 5K estimate, easy pace, and aerobic efficiency
 
-Not in this phase: aerobic efficiency algorithm, easy-running analysis, trends page, 5K estimate, privacy export/deletion, cookie-consent UI, or live Garmin OAuth.
+Not in this phase: privacy export/deletion, cookie-consent UI, live Garmin OAuth, or production deploy docs.
 
 ## Requirements
 
@@ -42,6 +44,8 @@ Then open:
 
 - App: http://localhost:5173
 - Dashboard (after sign-in): http://localhost:5173/
+- Easy running: http://localhost:5173/easy-running
+- Trends: http://localhost:5173/trends
 - Activities: http://localhost:5173/activities
 - API health: http://localhost:8000/health
 - OpenAPI (development only): http://localhost:8000/docs
@@ -143,7 +147,10 @@ See [docs/architecture.md](docs/architecture.md) for Garmin, security, and multi
 | `POST` | `/api/v1/auth/password-reset/confirm` | Set a new password from a reset token |
 | `GET` | `/api/v1/users/me` | Current authenticated user |
 | `POST` | `/api/v1/users/me/password` | Change password |
-| `GET` | `/api/v1/dashboard` | Last-7-day volume, recent runs, pace/HR trend, Phase 5 placeholders |
+| `GET` | `/api/v1/dashboard` | Last-7-day volume, recent runs, pace/HR trend, 5K estimate, easy pace, aerobic efficiency |
+| `GET` | `/api/v1/analytics/easy-running` | Easy-range aggregates and pace trend (`hr_min`, `hr_max`) |
+| `GET` | `/api/v1/analytics/trends` | Trend series (`range` = 4w/8w/3m/6m/1y/all, plus HR band) |
+| `GET` | `/api/v1/analytics/aerobic-efficiency` | Efficiency direction and score over easy/moderate runs |
 | `GET` | `/api/v1/activities` | Paginated activity list (`limit`, `offset`, `from_date`, `to_date`, `activity_type`) |
 | `GET` | `/api/v1/activities/{id}` | One activity (404 if missing or owned by someone else) |
 | `POST` | `/api/v1/activities` | Create an activity for the current user |
@@ -173,15 +180,15 @@ If the database is down the API returns `503` with `"status": "unhealthy"`. Erro
 }
 ```
 
-## Known limitations (Phase 4)
+## Known limitations (Phase 5)
 
 - No SMTP provider: verification and password-reset emails are recorded in memory. In `ENVIRONMENT=development` they appear on the account page. Tokens are never written to logs.
 - Email confirmation is not required to sign in.
 - Rate limiting is in-process only (one API worker). A shared store can replace it later.
-- 5K estimate, easy-pace analysis, and aerobic efficiency are dashboard placeholders until Phase 5.
-- There is no Trends page or configurable heart-rate range yet.
+- Aerobic efficiency and the 5K figure are application estimates, not lab or race results.
+- The default easy heart-rate band is 140–150 bpm and is a query parameter (also stored in the browser if you change it). It is not a personal Zone 2 and is not saved in PostgreSQL.
 - Activity samples omit GPS. That is intentional until there is a product need.
-- Date filters are UTC calendar days, not the browser’s local timezone.
+- Date filters are UTC calendar days, not the browser’s local timezone. Weekly trend buckets are Monday-based UTC weeks.
 - Privacy export/deletion, cookie-consent UI, and legal pages are later phases.
 - `GarminActivityProvider` is a stub: it does not call Garmin and must not be given invented endpoints.
 - Production deployment runbooks land in a later phase.

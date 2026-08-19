@@ -10,7 +10,11 @@ import type {
   ActivityListQuery,
   ActivityListResponse,
   ActivitySyncResponse,
+  AerobicEfficiencyResponse,
   DashboardResponse,
+  EasyRunningResponse,
+  TrendRangeKey,
+  TrendsResponse,
 } from "@/types/activity";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
@@ -210,6 +214,31 @@ export function fetchActivity(activityId: string): Promise<ActivityDetail> {
 
 export function fetchDashboard(): Promise<DashboardResponse> {
   return request<DashboardResponse>("/api/v1/dashboard");
+}
+
+export function fetchEasyRunning(hrMin: number, hrMax: number): Promise<EasyRunningResponse> {
+  const params = new URLSearchParams({
+    hr_min: String(hrMin),
+    hr_max: String(hrMax),
+  });
+  return request<EasyRunningResponse>(`/api/v1/analytics/easy-running?${params.toString()}`);
+}
+
+export function fetchTrends(
+  range: TrendRangeKey,
+  hrMin: number,
+  hrMax: number,
+): Promise<TrendsResponse> {
+  const params = new URLSearchParams({
+    range,
+    hr_min: String(hrMin),
+    hr_max: String(hrMax),
+  });
+  return request<TrendsResponse>(`/api/v1/analytics/trends?${params.toString()}`);
+}
+
+export function fetchAerobicEfficiency(): Promise<AerobicEfficiencyResponse> {
+  return request<AerobicEfficiencyResponse>("/api/v1/analytics/aerobic-efficiency");
 }
 
 export function syncActivities(): Promise<ActivitySyncResponse> {
