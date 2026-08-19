@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     garmin_client_id: str = ""
     garmin_client_secret: str = ""
     garmin_redirect_uri: str = ""
+    activity_provider: Literal["mock", "garmin"] = "mock"
 
     @field_validator("database_url")
     @classmethod

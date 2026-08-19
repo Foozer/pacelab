@@ -1,9 +1,5 @@
-"""External activity data providers.
+"""Activity ingestion providers.
 
-Garmin Connect access must use the official Garmin Connect Developer Program
-and OAuth 2.0. Do not scrape Garmin Connect or collect Garmin passwords.
-
-Provider implementations (ActivityProvider protocol, MockActivityProvider,
-GarminActivityProvider) are added in later phases. This package exists so those
-implementations have a stable import path.
+Garmin Connect is accessed only through the official developer program (Phase 7).
+This package must not scrape Garmin, invent API URLs, or store Garmin passwords.
 """

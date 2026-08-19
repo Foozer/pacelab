@@ -10,13 +10,16 @@ RUN deluser --remove-home node \
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm install \
+COPY scripts ./scripts
+RUN chmod +x /app/scripts/entrypoint.sh \
+    && npm install \
     && chown -R pacelab:pacelab /app
 
 USER pacelab
 
 EXPOSE 5173
 
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
 
 

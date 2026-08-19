@@ -21,6 +21,14 @@ export function AppLayout() {
             {loading ? null : user ? (
               <>
                 <NavLink
+                  to="/activities"
+                  className={({ isActive }) =>
+                    isActive ? "text-moss-deep underline" : "text-ink-soft hover:text-ink"
+                  }
+                >
+                  Activities
+                </NavLink>
+                <NavLink
                   to="/settings/account"
                   className={({ isActive }) =>
                     isActive ? "text-moss-deep underline" : "text-ink-soft hover:text-ink"

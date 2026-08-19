@@ -45,8 +45,11 @@ export function HomePage() {
         </p>
         {user ? (
           <p className="mt-6 text-ink">
-            Signed in as {user.email}. The dashboard arrives in a later phase — for now, manage
-            your{" "}
+            Signed in as {user.email}. Review your{" "}
+            <Link to="/activities" className="text-moss-deep underline">
+              activities
+            </Link>{" "}
+            or manage your{" "}
             <Link to="/settings/account" className="text-moss-deep underline">
               account
             </Link>
@@ -71,7 +74,7 @@ export function HomePage() {
           Foundation status
         </h2>
         <p className="mt-2 text-ink-soft">
-          Phase 2 adds accounts and secure sessions. Activities and analytics come next.
+          Phase 3 adds activity import and a simple history list. Dashboard charts come next.
         </p>
         <StatusPanel state={state} />
       </section>

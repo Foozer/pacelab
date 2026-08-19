@@ -9,6 +9,7 @@ from app.core.errors import AppError
 from app.core.rate_limit import InMemoryRateLimiter
 from app.core.security import SESSION_COOKIE_NAME
 from app.db.session import get_db
+from app.integrations.protocol import ActivityProvider
 from app.models.user import User
 from app.services.auth import get_user_for_session_token
 from app.services.email import EmailSender, RecordingEmailSender
@@ -25,6 +26,11 @@ async def get_current_user(
     if not user.is_active:
         raise AppError("ACCOUNT_DISABLED", "This account is disabled", status_code=403)
     return user
+
+
+def get_activity_provider(request: Request) -> ActivityProvider:
+    provider: ActivityProvider = request.app.state.activity_provider
+    return provider
 
 
 def get_email_sender(request: Request) -> EmailSender:

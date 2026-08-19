@@ -60,7 +60,8 @@ def _truncate_auth_tables() -> None:
             async with engine.begin() as connection:
                 await connection.execute(
                     text(
-                        "TRUNCATE TABLE user_tokens, auth_sessions, users RESTART IDENTITY CASCADE"
+                        "TRUNCATE TABLE activity_samples, activities, provider_connections, "
+                        "user_tokens, auth_sessions, users RESTART IDENTITY CASCADE"
                     )
                 )
         finally:

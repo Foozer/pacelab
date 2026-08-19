@@ -5,6 +5,7 @@ import type {
   MessageResponse,
   UserPublic,
 } from "@/types/auth";
+import type { ActivityListResponse, ActivitySyncResponse } from "@/types/activity";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
@@ -178,4 +179,16 @@ export async function fetchDevOutbox(): Promise<DevOutboxResponse | null> {
     }
     throw error;
   }
+}
+
+export function fetchActivities(limit: number, offset: number): Promise<ActivityListResponse> {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  return request<ActivityListResponse>(`/api/v1/activities?${params.toString()}`);
+}
+
+export function syncActivities(): Promise<ActivitySyncResponse> {
+  return request<ActivitySyncResponse>("/api/v1/activities/sync", { method: "POST" });
 }
