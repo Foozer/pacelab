@@ -35,7 +35,8 @@ class Settings(BaseSettings):
     garmin_client_id: str = ""
     garmin_client_secret: str = ""
     garmin_redirect_uri: str = ""
-    # Official Strava OAuth — Phase 8, unused. Not required to boot.
+    # Official Strava OAuth (Phase 8). Empty values are fine: the app still boots.
+    # Connecting Strava also requires ENCRYPTION_KEY so tokens can be stored encrypted.
     strava_client_id: str = ""
     strava_client_secret: str = ""
     strava_redirect_uri: str = ""
@@ -67,6 +68,14 @@ class Settings(BaseSettings):
     @property
     def session_cookie_secure(self) -> bool:
         return self.is_production or self.frontend_url.startswith("https://")
+
+    @property
+    def strava_client_configured(self) -> bool:
+        return bool(
+            self.strava_client_id.strip()
+            and self.strava_client_secret.strip()
+            and self.strava_redirect_uri.strip()
+        )
 
     @property
     def cors_origins(self) -> list[str]:

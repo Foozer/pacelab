@@ -54,20 +54,19 @@ Included: public account fields, activities, samples (no GPS; none is stored),
 provider name and last_sync_at.
 
 Excluded: password_hash, auth_sessions, user_tokens (hashed email-verify and
-reset tokens), CSRF and session secrets, SECRET_KEY, other users, invented
-OAuth token fields.
+reset tokens), CSRF and session secrets, SECRET_KEY, other users, Strava
+OAuth tokens, encryption keys.
 
 Deletion:
 
-- Running data: this user's activities (samples cascade) and provider_connections.
-  The account, sessions, and tokens remain. Analytics then hit the existing
-  empty/insufficient-data paths.
+- Running data: this user's activities (samples cascade), provider_connections,
+  and strava_connections. The account, sessions, and tokens remain.
 - Account: revoke sessions, delete the user row; SQLAlchemy / FK CASCADE
-  removes sessions, tokens, activities, samples, and provider_connections.
-  Hard delete; there is no deleted_at.
+  removes sessions, tokens, activities, samples, provider_connections, and
+  strava_connections. Hard delete; there is no deleted_at.
 - Disconnect provider: delete this user's provider_connections for that
-  provider name only. Activities are kept. Does not call Garmin or revoke
-  OAuth (no live OAuth exists yet).
+  provider name. For `strava`, also delete strava_connections and call Strava
+  token revoke. Activities are kept. This is not a Garmin disconnect.
 """
 
 from __future__ import annotations
@@ -84,6 +83,7 @@ from app.core.errors import AppError
 from app.core.passwords import verify_password
 from app.models.activity import Activity
 from app.models.provider_connection import ProviderConnection
+from app.models.strava_connection import StravaConnection, StravaOAuthState
 from app.models.user import User
 from app.schemas.activity import ActivityDetail
 from app.schemas.privacy import (
@@ -144,14 +144,16 @@ async def list_provider_connections(
 
 
 async def delete_running_data(session: AsyncSession, user: User) -> None:
-    """Remove activities, samples (CASCADE), and provider sync rows. Keep the account."""
+    """Remove activities, samples (CASCADE), provider sync rows, and Strava tokens."""
     await session.execute(delete(Activity).where(Activity.user_id == user.id))
     await session.execute(delete(ProviderConnection).where(ProviderConnection.user_id == user.id))
+    await session.execute(delete(StravaOAuthState).where(StravaOAuthState.user_id == user.id))
+    await session.execute(delete(StravaConnection).where(StravaConnection.user_id == user.id))
     logger.info("Deleted running data for user %s", user.id)
 
 
 async def disconnect_provider(session: AsyncSession, user: User, provider: str) -> None:
-    """Forget PaceLab's sync record for this provider. Does not call Garmin."""
+    """Forget PaceLab's sync record for this provider. Does not delete activity history."""
     await session.execute(
         delete(ProviderConnection).where(
             ProviderConnection.user_id == user.id,

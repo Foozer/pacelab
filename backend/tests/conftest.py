@@ -60,7 +60,8 @@ def _truncate_auth_tables() -> None:
             async with engine.begin() as connection:
                 await connection.execute(
                     text(
-                        "TRUNCATE TABLE activity_samples, activities, provider_connections, "
+                        "TRUNCATE TABLE activity_samples, activities, strava_oauth_states, "
+                        "strava_connections, provider_connections, "
                         "user_tokens, auth_sessions, users RESTART IDENTITY CASCADE"
                     )
                 )

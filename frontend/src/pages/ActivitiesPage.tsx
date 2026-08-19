@@ -107,7 +107,9 @@ export function ActivitiesPage() {
           <h1 className="font-display text-3xl">Activities</h1>
           <p className="mt-3 max-w-xl text-ink-soft">
             Your imported runs, one page at a time. Filter by date or type without loading
-            everything into the browser.
+            everything into the browser. Sync sample runs imports the development catalog, not
+            Strava. Connect Strava in Settings → Connected services. FIT upload stays on this
+            page.
           </p>
         </div>
         <form

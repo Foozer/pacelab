@@ -19,7 +19,6 @@ from app.integrations.fit.parser import (
     parse_fit_activity,
 )
 from app.integrations.garmin import GarminActivityProvider
-from app.integrations.strava import StravaActivityProvider
 from tests.conftest import csrf_headers, register_account
 from tests.fit_bytes import (
     FIXTURE_DISTANCE_METERS,
@@ -225,19 +224,6 @@ def test_parsed_samples_have_no_gps_keys() -> None:
     sample = activity.samples[0]
     assert not GPS_FIELD_NAMES.intersection(sample.__slots__)
     assert datetime.fromisoformat(sample.timestamp.isoformat()).tzinfo is not None
-
-
-def test_strava_provider_is_stub() -> None:
-    async def _check() -> None:
-        provider = StravaActivityProvider()
-        user_id = uuid.uuid4()
-        with pytest.raises(ProviderNotConfiguredError) as exc_info:
-            await provider.sync_activities(user_id)
-        assert exc_info.value.provider == "strava"
-        assert "Phase 8" in exc_info.value.message
-        assert "strava.com" in exc_info.value.message.lower()
-
-    asyncio.run(_check())
 
 
 def test_garmin_stub_still_unavailable() -> None:

@@ -9,7 +9,7 @@ Copy `.env.example` to `.env` before starting Docker Compose. Never commit `.env
 | `APP_VERSION` | no | Version string returned by `GET /health`. Defaults to `0.1.0`. |
 | `LOG_LEVEL` | no | `DEBUG`, `INFO`, `WARNING`, or `ERROR`. Production logs JSON to stdout. |
 | `SECRET_KEY` | yes | Signing secret reserved for future signed values. Use a long random value in any deployed environment. Session cookies use unguessable tokens hashed at rest rather than this key. |
-| `ENCRYPTION_KEY` | no | Reserved for encrypting Garmin OAuth tokens at rest. Leave empty until official Garmin OAuth exists (deferred). |
+| `ENCRYPTION_KEY` | to connect Strava | Fernet key for encrypting Strava OAuth tokens at rest. Not required to boot. Required to connect Strava. Generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Reserved later for Garmin tokens too. |
 | `ALLOWED_HOSTS` | production | Comma-separated hostnames for `TrustedHostMiddleware`. |
 | `FRONTEND_URL` | yes | Browser origin allowed by CORS. Do not use `*`. `localhost` and `127.0.0.1` are both accepted. |
 | `VITE_API_BASE_URL` | no | Absolute API URL as seen by the browser. Leave empty in development; the Vite proxy is used instead. |
@@ -23,9 +23,9 @@ Copy `.env.example` to `.env` before starting Docker Compose. Never commit `.env
 | `GARMIN_CLIENT_ID` | deferred | Official Garmin Connect Developer Program client id. Unused. Programme not accepting new apps as of 2026-08. |
 | `GARMIN_CLIENT_SECRET` | deferred | Official Garmin client secret. Unused. Never log or commit this value. |
 | `GARMIN_REDIRECT_URI` | deferred | OAuth redirect URI registered with Garmin. Unused. |
-| `STRAVA_CLIENT_ID` | Phase 8 | Official Strava OAuth client id. Unused; not required to boot. |
-| `STRAVA_CLIENT_SECRET` | Phase 8 | Official Strava client secret. Unused. |
-| `STRAVA_REDIRECT_URI` | Phase 8 | Strava OAuth redirect URI. Unused. |
+| `STRAVA_CLIENT_ID` | to connect Strava | Official Strava OAuth client id from https://www.strava.com/settings/api . Not required to boot. |
+| `STRAVA_CLIENT_SECRET` | to connect Strava | Official Strava client secret. Never log or commit this value. |
+| `STRAVA_REDIRECT_URI` | to connect Strava | Must match the callback registered with Strava. Default local value: `http://localhost:8000/api/v1/strava/callback`. |
 | `ACTIVITY_PROVIDER` | no | `mock` (default) or `garmin`. Garmin is a stub (deferred OAuth) and will not call invented endpoints. FIT import is a separate upload route. |
 | `PACELAB_SEED_EMAIL` | seed | Optional email for `python -m app.db.seed`. Defaults to `dev@example.com`. Must be an address `EmailStr` accepts, so reserved suffixes such as `.local` will not work. |
 | `PACELAB_SEED_PASSWORD` | seed | Optional password for the seed user. Defaults to the documented local-only value in the README. Never use this in production. |

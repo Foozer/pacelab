@@ -6,7 +6,7 @@ This repository is a monorepo. The first user is the developer, but the architec
 
 Garmin Connect is **not** scraped. Live Garmin import waits until the official Connect Developer Program accepts new apps. Until then, upload `.fit` files from your watch or Garmin Connect. PaceLab does not log into Garmin.
 
-## Current status — Phase 7
+## Current status — Phase 8
 
 Completed:
 
@@ -21,8 +21,9 @@ Completed:
 - Cookie categories (Necessary always on; Analytics/Marketing off and tracker-free)
 - Draft Privacy Policy, Cookie Policy, and Terms pages (for legal review)
 - FIT-file upload: Garmin-recorded runs enter PaceLab as files, not a live Garmin link
+- Official Strava OAuth: connect in Settings, sync this user’s activities (`activity:read_all`)
 
-Not started: live Garmin OAuth, Strava OAuth, or production deploy docs.
+Not started: live Garmin OAuth, or production deploy docs.
 
 ## Requirements
 
@@ -162,6 +163,10 @@ See [docs/architecture.md](docs/architecture.md) for Garmin, security, and multi
 | `POST` | `/api/v1/activities` | Create an activity for the current user |
 | `POST` | `/api/v1/activities/sync` | Import from the configured provider (mock by default) |
 | `POST` | `/api/v1/activities/import/fit` | Upload one or more `.fit` / `.fit.gz` files for the current user |
+| `GET` | `/api/v1/strava/status` | Whether Strava is configured and this user is connected |
+| `GET` | `/api/v1/strava/connect` | Start official Strava OAuth (302) |
+| `GET` | `/api/v1/strava/callback` | OAuth callback (protected by `state`, not CSRF header) |
+| `POST` | `/api/v1/strava/sync` | Pull this user’s Strava activities |
 | `GET` | `/api/v1/privacy/export` | JSON file of the current user's PaceLab data |
 | `GET` | `/api/v1/privacy/connections` | Provider name and last sync time for this user |
 | `POST` | `/api/v1/privacy/running-data/delete` | Delete activities, samples, and provider sync rows |
@@ -192,20 +197,24 @@ If the database is down the API returns `503` with `"status": "unhealthy"`. Erro
 }
 ```
 
-## Known limitations (Phase 7)
+## Known limitations (Phase 8)
 
 - No SMTP provider: verification and password-reset emails are recorded in memory. In `ENVIRONMENT=development` they appear on the account page. Tokens are never written to logs.
 - Email confirmation is not required to sign in.
 - Rate limiting is in-process only (one API worker). A shared store can replace it later.
 - Aerobic efficiency and the 5K figure are application estimates, not lab or race results.
 - The default easy heart-rate band is 140–150 bpm and is a query parameter (also stored in the browser if you change it). It is not a personal Zone 2 and is not saved in PostgreSQL.
-- Activity samples omit GPS. FIT uploads drop position fields and do not keep the original file.
+- Activity samples omit GPS. FIT uploads and Strava streams drop position fields. FIT uploads do not keep the original file.
 - Date filters are UTC calendar days, not the browser’s local timezone. Weekly trend buckets are Monday-based UTC weeks.
 - Privacy Policy, Cookie Policy, and Terms are drafts for legal review, not lawyer-approved and not a certification.
 - Cookie Analytics/Marketing choices are stored in the browser only. They do not enable tracking; there are no trackers.
-- Provider disconnect deletes PaceLab’s `provider_connections` row. It does not call Garmin or Strava or revoke OAuth.
-- Data export is a copy of PaceLab rows, not a Garmin Connect dump.
+- Provider disconnect deletes PaceLab’s `provider_connections` row. For Strava it also deletes encrypted tokens and revokes at Strava. It does not delete stored runs. It is not a Garmin disconnect.
+- Data export is a copy of PaceLab rows, not a Garmin Connect or Strava dump. Encrypted OAuth tokens are omitted.
 - FIT upload is “import a file from your watch or Garmin Connect”, not “connected to Garmin”. Limits: 8 MB per file, 20 files per request.
 - `GarminActivityProvider` is a stub: it does not call Garmin and must not be given invented endpoints.
-- `StravaActivityProvider` is a stub: it does not call Strava. Official Strava OAuth is Phase 8.
+- Official Garmin OAuth waits until the Connect Developer Program accepts new apps (paused as of 2026-08).
+- Strava webhooks are not implemented. First sync is a bounded recent window (90 days / page cap), not a full history backfill.
+- The same physical run can appear twice if imported as FIT and pulled from Strava. This phase does not merge them.
+- PaceLab is not a Strava or Garmin partner.
 - Production deployment runbooks land in a later phase.
+

@@ -1,7 +1,7 @@
-"""Select the configured activity provider.
+"""Select the configured activity provider for POST /api/v1/activities/sync.
 
 Default is mock. Garmin is a stub until official OAuth credentials exist.
-Strava is Phase 8 and is not selectable via ACTIVITY_PROVIDER.
+Strava is a per-user connection (POST /api/v1/strava/sync), not ACTIVITY_PROVIDER.
 FIT import is a push path (upload), not a pull provider.
 """
 

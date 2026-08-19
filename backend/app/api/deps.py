@@ -10,6 +10,7 @@ from app.core.rate_limit import InMemoryRateLimiter
 from app.core.security import SESSION_COOKIE_NAME
 from app.db.session import get_db
 from app.integrations.protocol import ActivityProvider
+from app.integrations.strava.client import StravaApiClient
 from app.models.user import User
 from app.services.auth import get_user_for_session_token
 from app.services.email import EmailSender, RecordingEmailSender
@@ -31,6 +32,12 @@ async def get_current_user(
 def get_activity_provider(request: Request) -> ActivityProvider:
     provider: ActivityProvider = request.app.state.activity_provider
     return provider
+
+
+def get_strava_client(request: Request) -> StravaApiClient:
+    settings = request.app.state.settings
+    transport = getattr(request.app.state, "strava_transport", None)
+    return StravaApiClient(settings, transport=transport)
 
 
 def get_email_sender(request: Request) -> EmailSender:
