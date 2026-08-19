@@ -23,6 +23,9 @@ Copy `.env.example` to `.env` before starting Docker Compose. Never commit `.env
 | `GARMIN_CLIENT_ID` | later | Official Garmin Connect Developer Program client id. Empty until issued. |
 | `GARMIN_CLIENT_SECRET` | later | Official Garmin client secret. Never log or commit this value. |
 | `GARMIN_REDIRECT_URI` | later | OAuth redirect URI registered with Garmin. |
+| `ACTIVITY_PROVIDER` | no | `mock` (default) or `garmin`. Garmin is a stub until Phase 7 and will not call invented endpoints. |
+| `PACELAB_SEED_EMAIL` | seed | Optional email for `python -m app.db.seed`. Defaults to `dev@example.com`. Must be an address `EmailStr` accepts, so reserved suffixes such as `.local` will not work. |
+| `PACELAB_SEED_PASSWORD` | seed | Optional password for the seed user. Defaults to the documented local-only value in the README. Never use this in production. |
 
 Cookies:
 

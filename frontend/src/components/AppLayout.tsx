@@ -6,7 +6,7 @@ export function AppLayout() {
   const { user, loading, logout } = useAuth();
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-3xl flex-col px-6 py-10">
+    <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10">
       <header className="border-b border-rule pb-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -20,6 +20,23 @@ export function AppLayout() {
           <nav aria-label="Account" className="flex flex-wrap items-center gap-4 text-sm">
             {loading ? null : user ? (
               <>
+                <NavLink
+                  to="/"
+                  end
+                  className={({ isActive }) =>
+                    isActive ? "text-moss-deep underline" : "text-ink-soft hover:text-ink"
+                  }
+                >
+                  Dashboard
+                </NavLink>
+                <NavLink
+                  to="/activities"
+                  className={({ isActive }) =>
+                    isActive ? "text-moss-deep underline" : "text-ink-soft hover:text-ink"
+                  }
+                >
+                  Activities
+                </NavLink>
                 <NavLink
                   to="/settings/account"
                   className={({ isActive }) =>

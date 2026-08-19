@@ -36,7 +36,35 @@ Phase 2 adds application authentication:
 - CSRF double-submit for mutating `/api` requests
 - Email verification and password-reset token **architecture** (hashed tokens, recording email sender — no SMTP yet)
 
-Activities, analytics, privacy tooling, and live Garmin access remain later phases.
+## Phase 3 scope
+
+Phase 3 adds activity ingestion without live Garmin access:
+
+- `activities`, `activity_samples`, and `provider_connections` tables
+- `ActivityProvider` protocol with `MockActivityProvider` (real catalog) and `GarminActivityProvider` (architecture stub)
+- Idempotent `sync_user_activities` keyed by `(user_id, provider, provider_activity_id)`
+- Versioned activity API under `/api/v1/activities`
+- Development seed: `python -m app.db.seed`
+
+## Phase 4 scope
+
+Phase 4 adds a personal dashboard and richer activity views:
+
+- Authenticated home dashboard answering “How is my running going?”
+- Last-7-day volume, recent runs, and a pace/heart-rate chart over recent activities
+- Explicit placeholders for 5K estimate, easy pace, and aerobic efficiency (Phase 5)
+- Activity history with date and type filters plus server-side pagination
+- Activity detail with summary stats and pace, heart-rate, and pace-versus-HR charts
+
+Charts use Recharts 3 (React SVG components with built-in tooltips). `react-is` is required as a peer of that library. No GPS is stored or drawn.
+
+Analytics that belong in Phase 5 (aerobic efficiency algorithm, easy-running page, trends page, 5K estimate) must not be invented here. Any calculation that is added lives in `app/services/running_metrics.py` or `app/services/dashboard.py`, never in an API route. Estimates must be labelled as estimates.
+
+Date filters on `GET /api/v1/activities` are inclusive calendar dates interpreted in UTC (`from_date` start of day through end of `to_date`).
+
+Time-series samples do **not** store latitude/longitude. GPS is sensitive location data and is not required for MVP pace/HR analytics. A future Garmin mapping can drop those fields even if the official API returns them.
+
+`provider_connections` records `last_sync_at` only. Encrypted Garmin OAuth tokens belong on a later `GarminConnection` (or extra columns) and must never appear in API responses.
 
 ## Authentication model
 
@@ -55,10 +83,10 @@ The application will **not**:
 - use unofficial Garmin authentication
 - invent Garmin API endpoints or credentials
 
-Activity ingestion is isolated behind a provider interface (implemented in later phases):
+Activity ingestion is isolated behind a provider interface:
 
-- `MockActivityProvider` for development and tests
-- `GarminActivityProvider` once official developer credentials exist
+- `MockActivityProvider` for development, tests, and seed data
+- `GarminActivityProvider` as a stub until official developer credentials exist (Phase 7). The stub raises; it does not invent HTTP endpoints.
 
 Until Garmin access is granted, PaceLab remains fully usable with mock data and optional FIT-file import.
 
@@ -79,4 +107,4 @@ Session cookies, CSRF, Argon2id password hashing, and account endpoints are in p
 
 ## Multi-user readiness
 
-Every future table that stores personal running data will have an explicit `user_id` ownership column. API handlers will take the current user from the authenticated session, never from a client-supplied `user_id`. That constraint is why Phase 1 already uses PostgreSQL rather than a single-user shortcut such as SQLite.
+Every table that stores personal running data has an explicit `user_id` ownership column (`ON DELETE CASCADE`). API handlers take the current user from the authenticated session, never from a client-supplied `user_id`. Activity rows are unique per `(user_id, provider, provider_activity_id)` so two accounts can import the same mock ids without colliding, and a repeated sync cannot duplicate a run.

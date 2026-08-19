@@ -16,6 +16,7 @@ from app.core.logging import configure_logging
 from app.core.middleware import SecurityHeadersMiddleware
 from app.core.rate_limit import InMemoryRateLimiter
 from app.db.session import create_engine, create_session_factory
+from app.integrations.factory import build_activity_provider
 from app.services.email import RecordingEmailSender
 
 
@@ -46,6 +47,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.debug = resolved.debug
     app.state.rate_limiter = InMemoryRateLimiter()
     app.state.email_sender = RecordingEmailSender()
+    app.state.activity_provider = build_activity_provider(resolved)
 
     app.add_middleware(CSRFMiddleware)
     app.add_middleware(SecurityHeadersMiddleware)
