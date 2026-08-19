@@ -34,6 +34,8 @@ Cookies:
 
 Fetch `GET /api/v1/auth/csrf` before the first mutating request.
 
+Heart-rate ranges for Easy Running and Trends are not environment variables. They are API query parameters (`hr_min`, `hr_max`; default 140–150 bpm) and may be remembered in the browser. They are not stored in PostgreSQL.
+
 ## Docker vs host URLs
 
 - Browser and host tools (pytest on the host, `curl`) talk to `localhost`.

@@ -19,8 +19,9 @@ Completed:
 - Trends page (pace, HR, weekly distance, frequency, comparable pace; 4w–all)
 - Simple 5K estimate (Riegel scaling, labelled as an estimate)
 - Dashboard cards for 5K estimate, easy pace, and aerobic efficiency
+- Heart-rate range control on Easy Running, Trends, and Settings → Preferences (browser only; default 140–150 bpm)
 
-Not in this phase: privacy export/deletion, cookie-consent UI, live Garmin OAuth, or production deploy docs.
+Not started: privacy export/deletion, cookie-consent UI, live Garmin OAuth, FIT-file import, or production deploy docs.
 
 ## Requirements
 
@@ -47,6 +48,7 @@ Then open:
 - Easy running: http://localhost:5173/easy-running
 - Trends: http://localhost:5173/trends
 - Activities: http://localhost:5173/activities
+- Settings: http://localhost:5173/settings/account (Preferences: `/settings/preferences`)
 - API health: http://localhost:8000/health
 - OpenAPI (development only): http://localhost:8000/docs
 
@@ -94,7 +96,7 @@ docker compose exec backend python -m app.db.seed
 .venv/bin/python -m app.db.seed
 ```
 
-Then sign in at http://localhost:5173/login. The home page is the dashboard. Re-running seed updates existing mock rows instead of duplicating them.
+Then sign in at http://localhost:5173/login. The home page is the dashboard. The mock catalog is 24 runs over eight weeks with a clear easy-pace improvement at a similar heart rate. Re-running seed updates existing mock rows instead of duplicating them.
 
 ## Tests
 
@@ -107,10 +109,10 @@ docker compose up -d postgres
 docker compose run --rm backend pytest
 ```
 
-Locally:
+Locally (PostgreSQL on `localhost:5432`, project venv in `backend/.venv`):
 
 ```bash
-cd backend && source .venv/bin/activate && pytest
+cd backend && .venv/bin/python -m pytest
 ```
 
 Do not run pytest inside the already-running backend container: it truncates that database and wipes seeded data.
@@ -156,7 +158,7 @@ See [docs/architecture.md](docs/architecture.md) for Garmin, security, and multi
 | `POST` | `/api/v1/activities` | Create an activity for the current user |
 | `POST` | `/api/v1/activities/sync` | Import from the configured provider (mock by default) |
 
-Mutating `/api` routes require the CSRF cookie plus `X-CSRF-Token`. Session identity is taken from the `pacelab_session` cookie, never from a client-supplied `user_id`.
+Dashboard, activities, and analytics routes require a signed-in session (`401` otherwise). Mutating `/api` routes also require the CSRF cookie plus `X-CSRF-Token`. Session identity is taken from the `pacelab_session` cookie, never from a client-supplied `user_id`. Heart-rate query params must satisfy `40 ≤ hr_min < hr_max ≤ 220`.
 
 Successful health payload:
 
