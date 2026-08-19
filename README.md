@@ -6,20 +6,19 @@ This repository is a monorepo. The first user is the developer, but the architec
 
 Garmin Connect is **not** scraped. When live import exists, it will use the official Garmin Connect Developer Program and OAuth 2.0. Until those credentials are available, the app runs without Garmin and stores PaceLab accounts independently.
 
-## Current status — Phase 3
+## Current status — Phase 4
 
 Completed:
 
 - Phase 1 foundation (Compose, FastAPI, PostgreSQL, React, health, migrations)
 - Phase 2 authentication (sessions, CSRF, Argon2id, account pages)
-- `Activity` and `ActivitySample` models with UUID public identifiers
-- Unique `(user_id, provider, provider_activity_id)` so sync cannot duplicate a run
-- `ActivityProvider` protocol: `MockActivityProvider` (24 realistic runs) and `GarminActivityProvider` (stub)
-- Idempotent `sync_user_activities` with `provider_connections.last_sync_at`
-- Authenticated, paginated `/api/v1/activities` plus POST create and POST sync
-- Seed command and a minimal authenticated Activities page
+- Phase 3 activity import (models, mock provider, sync, seed)
+- Dashboard answering “How is my running going?” (last-7-day volume, recent runs, pace/HR chart)
+- Activity history with date and type filters and server-side pagination
+- Activity detail with summary stats and pace, heart-rate, and pace-versus-HR charts (Recharts)
+- Simple pace and volume helpers in `backend/app/services/running_metrics.py`
 
-Not in this phase: dashboard charts, analytics, privacy export/deletion, cookie-consent UI, or live Garmin OAuth.
+Not in this phase: aerobic efficiency algorithm, easy-running analysis, trends page, 5K estimate, privacy export/deletion, cookie-consent UI, or live Garmin OAuth.
 
 ## Requirements
 
@@ -42,7 +41,8 @@ docker compose up --build
 Then open:
 
 - App: http://localhost:5173
-- Activities (after sign-in): http://localhost:5173/activities
+- Dashboard (after sign-in): http://localhost:5173/
+- Activities: http://localhost:5173/activities
 - API health: http://localhost:8000/health
 - OpenAPI (development only): http://localhost:8000/docs
 
@@ -90,7 +90,7 @@ docker compose exec backend python -m app.db.seed
 .venv/bin/python -m app.db.seed
 ```
 
-Then sign in at http://localhost:5173/login and open Activities. Re-running seed updates existing mock rows instead of duplicating them.
+Then sign in at http://localhost:5173/login. The home page is the dashboard. Re-running seed updates existing mock rows instead of duplicating them.
 
 ## Tests
 
@@ -108,6 +108,8 @@ Locally:
 ```bash
 cd backend && source .venv/bin/activate && pytest
 ```
+
+Do not run pytest inside the already-running backend container: it truncates that database and wipes seeded data.
 
 ## Lint and type checks
 
@@ -141,7 +143,8 @@ See [docs/architecture.md](docs/architecture.md) for Garmin, security, and multi
 | `POST` | `/api/v1/auth/password-reset/confirm` | Set a new password from a reset token |
 | `GET` | `/api/v1/users/me` | Current authenticated user |
 | `POST` | `/api/v1/users/me/password` | Change password |
-| `GET` | `/api/v1/activities` | Paginated activity list for the current user |
+| `GET` | `/api/v1/dashboard` | Last-7-day volume, recent runs, pace/HR trend, Phase 5 placeholders |
+| `GET` | `/api/v1/activities` | Paginated activity list (`limit`, `offset`, `from_date`, `to_date`, `activity_type`) |
 | `GET` | `/api/v1/activities/{id}` | One activity (404 if missing or owned by someone else) |
 | `POST` | `/api/v1/activities` | Create an activity for the current user |
 | `POST` | `/api/v1/activities/sync` | Import from the configured provider (mock by default) |
@@ -170,13 +173,15 @@ If the database is down the API returns `503` with `"status": "unhealthy"`. Erro
 }
 ```
 
-## Known limitations (Phase 3)
+## Known limitations (Phase 4)
 
 - No SMTP provider: verification and password-reset emails are recorded in memory. In `ENVIRONMENT=development` they appear on the account page. Tokens are never written to logs.
 - Email confirmation is not required to sign in.
 - Rate limiting is in-process only (one API worker). A shared store can replace it later.
-- Dashboard charts, analytics, and 5K estimates are later phases.
+- 5K estimate, easy-pace analysis, and aerobic efficiency are dashboard placeholders until Phase 5.
+- There is no Trends page or configurable heart-rate range yet.
 - Activity samples omit GPS. That is intentional until there is a product need.
+- Date filters are UTC calendar days, not the browser’s local timezone.
 - Privacy export/deletion, cookie-consent UI, and legal pages are later phases.
 - `GarminActivityProvider` is a stub: it does not call Garmin and must not be given invented endpoints.
 - Production deployment runbooks land in a later phase.

@@ -5,7 +5,13 @@ import type {
   MessageResponse,
   UserPublic,
 } from "@/types/auth";
-import type { ActivityListResponse, ActivitySyncResponse } from "@/types/activity";
+import type {
+  ActivityDetail,
+  ActivityListQuery,
+  ActivityListResponse,
+  ActivitySyncResponse,
+  DashboardResponse,
+} from "@/types/activity";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
@@ -181,12 +187,29 @@ export async function fetchDevOutbox(): Promise<DevOutboxResponse | null> {
   }
 }
 
-export function fetchActivities(limit: number, offset: number): Promise<ActivityListResponse> {
+export function fetchActivities(query: ActivityListQuery): Promise<ActivityListResponse> {
   const params = new URLSearchParams({
-    limit: String(limit),
-    offset: String(offset),
+    limit: String(query.limit),
+    offset: String(query.offset),
   });
+  if (query.fromDate) {
+    params.set("from_date", query.fromDate);
+  }
+  if (query.toDate) {
+    params.set("to_date", query.toDate);
+  }
+  if (query.activityType) {
+    params.set("activity_type", query.activityType);
+  }
   return request<ActivityListResponse>(`/api/v1/activities?${params.toString()}`);
+}
+
+export function fetchActivity(activityId: string): Promise<ActivityDetail> {
+  return request<ActivityDetail>(`/api/v1/activities/${activityId}`);
+}
+
+export function fetchDashboard(): Promise<DashboardResponse> {
+  return request<DashboardResponse>("/api/v1/dashboard");
 }
 
 export function syncActivities(): Promise<ActivitySyncResponse> {

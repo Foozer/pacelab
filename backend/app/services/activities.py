@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -36,21 +36,75 @@ async def get_activity_for_user(
     return result.scalar_one_or_none()
 
 
+def utc_day_start(value: date) -> datetime:
+    return datetime.combine(value, time.min, tzinfo=UTC)
+
+
+async def list_activity_types_for_user(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+) -> list[str]:
+    result = await session.execute(
+        select(Activity.activity_type)
+        .where(Activity.user_id == user_id, Activity.activity_type.is_not(None))
+        .distinct()
+        .order_by(Activity.activity_type)
+    )
+    return [row[0] for row in result.all() if row[0]]
+
+
+def _filtered_activity_query(
+    *,
+    user_id: uuid.UUID,
+    started_on_or_after: date | None,
+    started_on_or_before: date | None,
+    activity_type: str | None,
+) -> Select[tuple[Activity]]:
+    query = select(Activity).where(Activity.user_id == user_id)
+    if activity_type:
+        query = query.where(Activity.activity_type == activity_type)
+    if started_on_or_after is not None or started_on_or_before is not None:
+        query = query.where(Activity.started_at.is_not(None))
+    if started_on_or_after is not None:
+        query = query.where(Activity.started_at >= utc_day_start(started_on_or_after))
+    if started_on_or_before is not None:
+        exclusive_end = utc_day_start(started_on_or_before) + timedelta(days=1)
+        query = query.where(Activity.started_at < exclusive_end)
+    return query
+
+
 async def list_activities_for_user(
     session: AsyncSession,
     *,
     user_id: uuid.UUID,
     limit: int,
     offset: int,
+    started_on_or_after: date | None = None,
+    started_on_or_before: date | None = None,
+    activity_type: str | None = None,
 ) -> tuple[list[Activity], int]:
-    total_result = await session.execute(
-        select(func.count()).select_from(Activity).where(Activity.user_id == user_id)
+    if (
+        started_on_or_after is not None
+        and started_on_or_before is not None
+        and started_on_or_after > started_on_or_before
+    ):
+        raise AppError(
+            "INVALID_DATE_RANGE",
+            "from_date must be on or before to_date",
+            status_code=400,
+        )
+
+    filtered = _filtered_activity_query(
+        user_id=user_id,
+        started_on_or_after=started_on_or_after,
+        started_on_or_before=started_on_or_before,
+        activity_type=activity_type,
     )
+    total_result = await session.execute(select(func.count()).select_from(filtered.subquery()))
     total = int(total_result.scalar_one())
     result = await session.execute(
-        select(Activity)
-        .where(Activity.user_id == user_id)
-        .order_by(Activity.started_at.desc().nulls_last(), Activity.id.desc())
+        filtered.order_by(Activity.started_at.desc().nulls_last(), Activity.id.desc())
         .limit(limit)
         .offset(offset)
     )

@@ -142,6 +142,111 @@ def test_activity_list_is_paginated_and_scoped(client: TestClient) -> None:
     assert payload["limit"] == 2
     assert len(payload["items"]) == 2
     assert "samples" not in payload["items"][0]
+    assert payload["activity_types"] == ["run"]
+
+
+def test_activity_list_filters_by_date_and_type(client: TestClient) -> None:
+    register_account(client, "runner@example.com")
+    headers = csrf_headers(client)
+    april = client.post(
+        "/api/v1/activities",
+        json=_activity_payload("april-run"),
+        headers=headers,
+    )
+    assert april.status_code == 201
+    cycle_payload = _activity_payload("may-cycle")
+    cycle_payload["started_at"] = datetime(2026, 5, 10, 8, 0, tzinfo=UTC).isoformat()
+    cycle_payload["activity_type"] = "cycle"
+    cycle = client.post("/api/v1/activities", json=cycle_payload, headers=headers)
+    assert cycle.status_code == 201
+    june_payload = _activity_payload("june-run")
+    june_payload["started_at"] = datetime(2026, 6, 2, 7, 0, tzinfo=UTC).isoformat()
+    june = client.post("/api/v1/activities", json=june_payload, headers=headers)
+    assert june.status_code == 201
+
+    by_type = client.get("/api/v1/activities", params={"activity_type": "cycle"})
+    assert by_type.status_code == 200
+    assert by_type.json()["total"] == 1
+    assert by_type.json()["items"][0]["id"] == cycle.json()["id"]
+    assert set(by_type.json()["activity_types"]) == {"cycle", "run"}
+
+    by_date = client.get(
+        "/api/v1/activities",
+        params={"from_date": "2026-05-01", "to_date": "2026-05-31"},
+    )
+    assert by_date.status_code == 200
+    assert by_date.json()["total"] == 1
+    assert by_date.json()["items"][0]["id"] == cycle.json()["id"]
+
+    inclusive_end = client.get(
+        "/api/v1/activities",
+        params={"from_date": "2026-04-01", "to_date": "2026-04-01"},
+    )
+    assert inclusive_end.json()["total"] == 1
+    assert inclusive_end.json()["items"][0]["id"] == april.json()["id"]
+
+    combined = client.get(
+        "/api/v1/activities",
+        params={"from_date": "2026-05-01", "to_date": "2026-06-30", "activity_type": "run"},
+    )
+    assert combined.json()["total"] == 1
+    assert combined.json()["items"][0]["id"] == june.json()["id"]
+
+
+def test_activity_list_rejects_inverted_date_range(client: TestClient) -> None:
+    register_account(client, "runner@example.com")
+    response = client.get(
+        "/api/v1/activities",
+        params={"from_date": "2026-06-01", "to_date": "2026-05-01"},
+    )
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "INVALID_DATE_RANGE"
+
+
+def test_activity_list_pagination_boundaries_and_isolation(client: TestClient) -> None:
+    register_account(client, "alpha@example.com")
+    headers = csrf_headers(client)
+    for index in range(5):
+        payload = _activity_payload(f"alpha-{index}")
+        payload["started_at"] = datetime(2026, 4, 1 + index, 7, 0, tzinfo=UTC).isoformat()
+        created = client.post("/api/v1/activities", json=payload, headers=headers)
+        assert created.status_code == 201
+
+    first = client.get("/api/v1/activities", params={"limit": 2, "offset": 0})
+    assert first.json()["total"] == 5
+    assert len(first.json()["items"]) == 2
+
+    last = client.get("/api/v1/activities", params={"limit": 2, "offset": 4})
+    assert last.json()["total"] == 5
+    assert len(last.json()["items"]) == 1
+
+    empty = client.get("/api/v1/activities", params={"limit": 2, "offset": 5})
+    assert empty.json()["total"] == 5
+    assert empty.json()["items"] == []
+
+    past_end = client.get("/api/v1/activities", params={"limit": 2, "offset": 50})
+    assert past_end.json()["items"] == []
+
+    client.cookies.clear()
+    register_account(client, "beta@example.com")
+    headers = csrf_headers(client)
+    other = client.post(
+        "/api/v1/activities",
+        json=_activity_payload("beta-only"),
+        headers=headers,
+    )
+    assert other.status_code == 201
+
+    listed = client.get("/api/v1/activities", params={"limit": 100})
+    assert listed.json()["total"] == 1
+    assert listed.json()["items"][0]["id"] == other.json()["id"]
+
+    by_date = client.get(
+        "/api/v1/activities",
+        params={"from_date": "2026-04-01", "to_date": "2026-04-30", "limit": 100},
+    )
+    assert by_date.json()["total"] == 1
+    assert by_date.json()["items"][0]["provider_activity_id"] == "beta-only"
 
 
 def test_sync_is_idempotent(client: TestClient) -> None:

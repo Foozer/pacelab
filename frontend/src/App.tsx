@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { AuthProvider } from "@/features/auth/AuthContext";
 import { RequireAuth } from "@/features/auth/ProtectedRoute";
 import { ActivitiesPage } from "@/pages/ActivitiesPage";
+import { ActivityDetailPage } from "@/pages/ActivityDetailPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
@@ -31,6 +32,14 @@ export default function App() {
               element={
                 <RequireAuth>
                   <ActivitiesPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/activities/:activityId"
+              element={
+                <RequireAuth>
+                  <ActivityDetailPage />
                 </RequireAuth>
               }
             />

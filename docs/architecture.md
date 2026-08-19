@@ -46,7 +46,21 @@ Phase 3 adds activity ingestion without live Garmin access:
 - Versioned activity API under `/api/v1/activities`
 - Development seed: `python -m app.db.seed`
 
-Analytics, dashboard charts, privacy tooling, and live Garmin OAuth remain later phases.
+## Phase 4 scope
+
+Phase 4 adds a personal dashboard and richer activity views:
+
+- Authenticated home dashboard answering “How is my running going?”
+- Last-7-day volume, recent runs, and a pace/heart-rate chart over recent activities
+- Explicit placeholders for 5K estimate, easy pace, and aerobic efficiency (Phase 5)
+- Activity history with date and type filters plus server-side pagination
+- Activity detail with summary stats and pace, heart-rate, and pace-versus-HR charts
+
+Charts use Recharts 3 (React SVG components with built-in tooltips). `react-is` is required as a peer of that library. No GPS is stored or drawn.
+
+Analytics that belong in Phase 5 (aerobic efficiency algorithm, easy-running page, trends page, 5K estimate) must not be invented here. Any calculation that is added lives in `app/services/running_metrics.py` or `app/services/dashboard.py`, never in an API route. Estimates must be labelled as estimates.
+
+Date filters on `GET /api/v1/activities` are inclusive calendar dates interpreted in UTC (`from_date` start of day through end of `to_date`).
 
 Time-series samples do **not** store latitude/longitude. GPS is sensitive location data and is not required for MVP pace/HR analytics. A future Garmin mapping can drop those fields even if the official API returns them.
 

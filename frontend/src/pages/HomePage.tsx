@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { fetchHealth } from "@/lib/api";
 import { useAuth } from "@/features/auth/AuthContext";
+import { DashboardPage } from "@/pages/DashboardPage";
 import type { HealthResponse } from "@/types/health";
 
 type LoadState =
@@ -11,7 +12,24 @@ type LoadState =
   | { status: "error"; message: string };
 
 export function HomePage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <p className="rounded-sm border border-rule bg-paper-2 px-4 py-3" role="status">
+        Checking your session…
+      </p>
+    );
+  }
+
+  if (user) {
+    return <DashboardPage />;
+  }
+
+  return <LandingPage />;
+}
+
+function LandingPage() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {
@@ -43,30 +61,16 @@ export function HomePage() {
           Understand whether your fitness is actually improving — pace relative to heart rate,
           easy running, and long-term trends. Not another copy of Garmin Connect.
         </p>
-        {user ? (
-          <p className="mt-6 text-ink">
-            Signed in as {user.email}. Review your{" "}
-            <Link to="/activities" className="text-moss-deep underline">
-              activities
-            </Link>{" "}
-            or manage your{" "}
-            <Link to="/settings/account" className="text-moss-deep underline">
-              account
-            </Link>
-            .
-          </p>
-        ) : (
-          <p className="mt-6 text-ink">
-            <Link to="/register" className="text-moss-deep underline">
-              Create an account
-            </Link>{" "}
-            or{" "}
-            <Link to="/login" className="text-moss-deep underline">
-              log in
-            </Link>{" "}
-            to start using PaceLab.
-          </p>
-        )}
+        <p className="mt-6 text-ink">
+          <Link to="/register" className="text-moss-deep underline">
+            Create an account
+          </Link>{" "}
+          or{" "}
+          <Link to="/login" className="text-moss-deep underline">
+            log in
+          </Link>{" "}
+          to start using PaceLab.
+        </p>
       </section>
 
       <section aria-labelledby="stack-status">
@@ -74,7 +78,7 @@ export function HomePage() {
           Foundation status
         </h2>
         <p className="mt-2 text-ink-soft">
-          Phase 3 adds activity import and a simple history list. Dashboard charts come next.
+          After you sign in, this page becomes your running dashboard.
         </p>
         <StatusPanel state={state} />
       </section>

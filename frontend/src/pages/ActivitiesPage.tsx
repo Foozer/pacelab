@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 
 import { FormError, PrimaryButton } from "@/components/Form";
 import { fetchActivities, formatAuthError, syncActivities } from "@/lib/api";
-import type { ActivityListResponse, ActivitySummary } from "@/types/activity";
+import { formatDateTime, formatDistance, formatDuration, formatPace } from "@/lib/format";
+import type { ActivityListResponse } from "@/types/activity";
 
 const PAGE_SIZE = 20;
 
@@ -13,19 +15,31 @@ type LoadState =
 
 export function ActivitiesPage() {
   const [offset, setOffset] = useState(0);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [activityType, setActivityType] = useState("");
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const load = useCallback(async (nextOffset: number) => {
-    setState({ status: "loading" });
-    try {
-      const data = await fetchActivities(PAGE_SIZE, nextOffset);
-      setState({ status: "ready", data });
-    } catch (error) {
-      setState({ status: "error", message: formatAuthError(error) });
-    }
-  }, []);
+  const load = useCallback(
+    async (nextOffset: number) => {
+      setState({ status: "loading" });
+      try {
+        const data = await fetchActivities({
+          limit: PAGE_SIZE,
+          offset: nextOffset,
+          fromDate: fromDate || undefined,
+          toDate: toDate || undefined,
+          activityType: activityType || undefined,
+        });
+        setState({ status: "ready", data });
+      } catch (error) {
+        setState({ status: "error", message: formatAuthError(error) });
+      }
+    },
+    [activityType, fromDate, toDate],
+  );
 
   useEffect(() => {
     void load(offset);
@@ -48,14 +62,20 @@ export function ActivitiesPage() {
     }
   }
 
+  function applyFilters(event: FormEvent) {
+    event.preventDefault();
+    setOffset(0);
+    void load(0);
+  }
+
   return (
     <section>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl">Activities</h1>
           <p className="mt-3 max-w-xl text-ink-soft">
-            Your imported runs. Charts and trends arrive in a later phase. Use mock import until
-            official Garmin OAuth is available.
+            Your imported runs, one page at a time. Filter by date or type without loading
+            everything into the browser.
           </p>
         </div>
         <form
@@ -69,6 +89,57 @@ export function ActivitiesPage() {
           </PrimaryButton>
         </form>
       </div>
+
+      <form
+        className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-4 sm:items-end"
+        onSubmit={applyFilters}
+      >
+        <label className="block">
+          <span className="text-sm text-ink">From</span>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(event) => {
+              setFromDate(event.target.value);
+              setOffset(0);
+            }}
+            className="mt-2 w-full border border-rule bg-paper px-3 py-2 text-ink outline-none focus:border-moss"
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm text-ink">To</span>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(event) => {
+              setToDate(event.target.value);
+              setOffset(0);
+            }}
+            className="mt-2 w-full border border-rule bg-paper px-3 py-2 text-ink outline-none focus:border-moss"
+          />
+        </label>
+        <label className="block">
+          <span className="text-sm text-ink">Type</span>
+          <select
+            value={activityType}
+            onChange={(event) => {
+              setActivityType(event.target.value);
+              setOffset(0);
+            }}
+            className="mt-2 w-full border border-rule bg-paper px-3 py-2 text-ink outline-none focus:border-moss"
+          >
+            <option value="">All types</option>
+            {(state.status === "ready" ? state.data.activity_types : []).map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" className="border border-rule px-3 py-2 text-sm text-ink hover:bg-paper-2">
+          Apply dates
+        </button>
+      </form>
 
       {notice ? <p className="mt-6 text-sm text-ink-soft">{notice}</p> : null}
 
@@ -84,7 +155,9 @@ export function ActivitiesPage() {
         </div>
       ) : null}
 
-      {state.status === "ready" ? <ActivityTable data={state.data} offset={offset} onPage={setOffset} /> : null}
+      {state.status === "ready" ? (
+        <ActivityTable data={state.data} offset={offset} onPage={setOffset} />
+      ) : null}
     </section>
   );
 }
@@ -101,7 +174,7 @@ function ActivityTable({
   if (data.total === 0) {
     return (
       <p className="mt-8 rounded-sm border border-rule bg-paper-2 px-4 py-3">
-        No activities yet. Import mock runs, or run{" "}
+        No activities match these filters. Import mock runs, or run{" "}
         <code className="font-mono text-sm">python -m app.db.seed</code> from the backend
         directory.
       </p>
@@ -114,7 +187,7 @@ function ActivityTable({
   return (
     <>
       <p className="mt-8 text-sm text-ink-soft">
-        {data.total} runs
+        {data.total} {data.total === 1 ? "activity" : "activities"}
         {data.last_sync_at ? ` · last import ${formatDateTime(data.last_sync_at)}` : ""}
       </p>
       <div className="mt-4 overflow-x-auto">
@@ -132,7 +205,11 @@ function ActivityTable({
           <tbody>
             {data.items.map((activity) => (
               <tr key={activity.id} className="border-b border-rule/70">
-                <td className="py-3 pr-4">{formatDateTime(activity.started_at)}</td>
+                <td className="py-3 pr-4">
+                  <Link to={`/activities/${activity.id}`} className="text-moss-deep underline">
+                    {formatDateTime(activity.started_at)}
+                  </Link>
+                </td>
                 <td className="py-3 pr-4">{formatDistance(activity.distance_meters)}</td>
                 <td className="py-3 pr-4">{formatDuration(activity.duration_seconds)}</td>
                 <td className="py-3 pr-4">{formatPace(activity)}</td>
@@ -170,51 +247,4 @@ function ActivityTable({
       </div>
     </>
   );
-}
-
-function formatDateTime(value: string | null): string {
-  if (!value) {
-    return "—";
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
-function formatDistance(meters: number | null): string {
-  if (meters == null) {
-    return "—";
-  }
-  return `${(meters / 1000).toFixed(2)} km`;
-}
-
-function formatDuration(seconds: number | null): string {
-  if (seconds == null) {
-    return "—";
-  }
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainder = seconds % 60;
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
-  }
-  return `${minutes}:${String(remainder).padStart(2, "0")}`;
-}
-
-function formatPace(activity: ActivitySummary): string {
-  if (activity.distance_meters == null || activity.duration_seconds == null) {
-    return "—";
-  }
-  if (activity.distance_meters < 1 || activity.duration_seconds < 1) {
-    return "—";
-  }
-  const secondsPerKm = activity.duration_seconds / (activity.distance_meters / 1000);
-  const minutes = Math.floor(secondsPerKm / 60);
-  const seconds = Math.round(secondsPerKm % 60);
-  return `${minutes}:${String(seconds).padStart(2, "0")}/km`;
 }

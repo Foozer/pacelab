@@ -80,6 +80,7 @@ class ActivityListResponse(BaseModel):
     limit: int
     offset: int
     last_sync_at: datetime | None
+    activity_types: list[str]
 
 
 class ActivitySyncResponse(BaseModel):

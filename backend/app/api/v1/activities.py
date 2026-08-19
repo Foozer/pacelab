@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,24 +33,32 @@ async def list_activities(
     provider: ActivityProvider = Depends(get_activity_provider),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    from_date: date | None = Query(default=None),
+    to_date: date | None = Query(default=None),
+    activity_type: str | None = Query(default=None, min_length=1, max_length=64),
 ) -> ActivityListResponse:
     items, total = await activity_service.list_activities_for_user(
         db,
         user_id=user.id,
         limit=limit,
         offset=offset,
+        started_on_or_after=from_date,
+        started_on_or_before=to_date,
+        activity_type=activity_type,
     )
     last_sync_at = await activity_service.get_last_sync_at(
         db,
         user_id=user.id,
         provider=provider.provider_name,
     )
+    activity_types = await activity_service.list_activity_types_for_user(db, user_id=user.id)
     return ActivityListResponse(
         items=[ActivitySummary.model_validate(item) for item in items],
         total=total,
         limit=limit,
         offset=offset,
         last_sync_at=last_sync_at,
+        activity_types=activity_types,
     )
 
 
