@@ -28,6 +28,8 @@ _SECRET_FIELD_NAMES = frozenset(
         "client_secret",
         "session_token",
         "csrf_token",
+        "smtp_password",
+        "smtp_username",
     }
 )
 

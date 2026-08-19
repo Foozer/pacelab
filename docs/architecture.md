@@ -2,7 +2,7 @@
 
 PaceLab is a running analytics platform. The product question is whether a runner's fitness is actually improving — not a recreation of Garmin Connect.
 
-This document records decisions that later phases must preserve. **Phase 8 is implemented** (official Strava OAuth + activity sync). Live Garmin OAuth and production deploy docs are not started.
+This document records decisions that later phases must preserve. **Phase 9 is implemented** (friend-scale public HTTPS, SMTP, operator runbook). Live Garmin OAuth, billing, and Kubernetes are not started.
 
 ## System shape
 
@@ -10,9 +10,10 @@ The repository is a monorepo:
 
 - `frontend/` — React, TypeScript, Vite, Tailwind CSS
 - `backend/` — FastAPI, SQLAlchemy 2 (async), Alembic, PostgreSQL
-- `docker-compose.yml` — `frontend`, `backend`, `postgres`
+- `docker-compose.yml` — laptop development (`frontend`, `backend`, `postgres`)
+- `docker-compose.prod.yml` — friend-scale VPS (`caddy`, `frontend`, `backend`, `postgres`)
 
-No Redis, Celery, or Kubernetes is used for the MVP.
+No Redis, Celery, or Kubernetes is used. Rate limits are in-process (one API worker in production).
 
 ## Phase 1 scope
 
@@ -143,6 +144,26 @@ Phase 8 adds official Strava OAuth so PaceLab can pull a user’s activities wit
 
 PaceLab is not a Strava or Garmin partner. Connecting Strava is “connected to Strava”, not “connected to Garmin”.
 
+## Phase 9 scope
+
+Phase 9 makes PaceLab reachable on the public internet for the operator and a handful of friends:
+
+- One public HTTPS origin (Caddy + Let’s Encrypt) in front of the existing production Docker images
+- SMTP transactional mail (`SmtpEmailSender`); production refuses to boot without SMTP
+- Development still uses `RecordingEmailSender` when SMTP env is empty (Account-page outbox)
+- Operator runbook: `docs/deploy.md` (domain, DNS, VPS, secrets, Strava callback, backups)
+- Mock “sync sample runs” and the in-memory outbox are development-only
+
+This is **friend-scale**, not hyperscale. Scale-up (managed Postgres, Redis rate limits, Strava webhooks, more workers) is documented in `docs/deploy.md` and is not implemented.
+
+Ingestion: mock / fit / strava / garmin-stub (unchanged)
+
+Hosting:
+
+- development — Docker Compose on the operator laptop
+- production (Phase 9) — single public HTTPS origin, friend-scale, real SMTP
+- later — managed DB, shared rate limits, Strava webhooks, more workers
+
 ## Authentication model
 
 PaceLab sessions are **not** JWTs in localStorage. A row in `auth_sessions` can be revoked on logout or password change. The API derives the current user from that session. Handlers must not trust a client-supplied `user_id`.
@@ -173,7 +194,7 @@ Activity pull ingestion is isolated behind a provider interface:
 
 FIT import is a push path (`app/integrations/fit/` + `app/services/fit_import.py`), not a pull provider. The same user may have `fit`, `mock`, and `strava` rows. This phase does not merge FIT and Strava copies of the same physical run.
 
-OAuth client secrets live in environment variables. Strava access/refresh tokens are Fernet-encrypted in `strava_connections`. They are never returned by the API, never written to logs, and never included in privacy export. Garmin and Strava env vars may be empty; the app still boots. Connecting Strava requires `ENCRYPTION_KEY`.
+OAuth client secrets live in environment variables. Strava access/refresh tokens are Fernet-encrypted in `strava_connections`. They are never returned by the API, never written to logs, and never included in privacy export. Garmin and Strava env vars may be empty; the app still boots. Connecting Strava requires `ENCRYPTION_KEY`. Losing `ENCRYPTION_KEY` or the database means friends must reconnect Strava.
 
 ## Security baseline already in place
 
@@ -181,10 +202,10 @@ OAuth client secrets live in environment variables. Strava access/refresh tokens
 - CORS is restricted to `FRONTEND_URL`
 - Security headers on API responses
 - OpenAPI docs disabled when `ENVIRONMENT=production`
-- Production rejects debug mode and placeholder `SECRET_KEY` values
+- Production rejects debug mode, placeholder `SECRET_KEY` values, http `FRONTEND_URL`, and empty SMTP
 - Database access is async SQLAlchemy (parameterised queries)
-- Docker images run as a non-root user (`pacelab`)
-- Health checks do not expose stack traces
+- Docker images run as a non-root user (`pacelab`); Caddy is the TLS edge
+- Health checks do not expose stack traces, secrets, or mail tokens
 
 Session cookies, CSRF, Argon2id password hashing, and account endpoints are in place as of Phase 2. Privacy export, deletion, cookie-consent UI, and draft legal pages are in place as of Phase 6 and must not be weakened by later Garmin or billing work.
 

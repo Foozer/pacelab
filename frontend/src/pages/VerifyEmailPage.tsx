@@ -36,8 +36,9 @@ export function VerifyEmailPage() {
     <section className="max-w-md">
       <h1 className="font-display text-3xl">Confirm email</h1>
       <p className="mt-2 text-ink-soft">
-        Email sending is not wired to a provider yet. In development you can paste the token from
-        the account page outbox.
+        {import.meta.env.DEV
+          ? "In development, paste the token from the account page outbox if SMTP is not configured."
+          : "Use the link from your PaceLab confirmation email, or paste the token here."}
       </p>
       {done ? (
         <p className="mt-8 rounded-sm border border-rule bg-paper-2 px-4 py-3" role="status">

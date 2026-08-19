@@ -23,6 +23,14 @@ os.environ.setdefault(
 )
 os.environ.setdefault("FRONTEND_URL", "http://localhost:5173")
 os.environ.setdefault("LOG_LEVEL", "WARNING")
+# Isolate default app tests from a laptop .env that has live Strava/SMTP keys.
+os.environ["STRAVA_CLIENT_ID"] = ""
+os.environ["STRAVA_CLIENT_SECRET"] = ""
+os.environ["STRAVA_REDIRECT_URI"] = ""
+os.environ["SMTP_HOST"] = ""
+os.environ["SMTP_USERNAME"] = ""
+os.environ["SMTP_PASSWORD"] = ""
+os.environ["SMTP_FROM"] = ""
 
 from app.core.config import get_settings  # noqa: E402
 from app.db.session import create_engine  # noqa: E402

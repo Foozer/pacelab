@@ -33,7 +33,8 @@ export function RegisterPage() {
     <section className="max-w-md">
       <h1 className="font-display text-3xl">Create an account</h1>
       <p className="mt-2 text-ink-soft">
-        PaceLab stores your running data against this account. Passwords are hashed with Argon2id.
+        PaceLab is a private friends beta, not a general public product. Your running data is stored
+        against this account. Passwords are hashed with Argon2id.
       </p>
       <form className="mt-8 flex flex-col gap-5" onSubmit={(event) => void onSubmit(event)}>
         <FormError message={error} />

@@ -17,7 +17,7 @@ from app.core.middleware import SecurityHeadersMiddleware
 from app.core.rate_limit import InMemoryRateLimiter
 from app.db.session import create_engine, create_session_factory
 from app.integrations.factory import build_activity_provider
-from app.services.email import RecordingEmailSender
+from app.services.email import create_email_sender
 
 
 @asynccontextmanager
@@ -33,6 +33,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     resolved = settings or get_settings()
+    # Production refuses debug, placeholder secrets, http FRONTEND_URL, and empty SMTP.
+    resolved.validate_for_environment()
 
     app = FastAPI(
         title="PaceLab API",
@@ -46,7 +48,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = resolved
     app.state.debug = resolved.debug
     app.state.rate_limiter = InMemoryRateLimiter()
-    app.state.email_sender = RecordingEmailSender()
+    app.state.email_sender = create_email_sender(resolved)
     app.state.activity_provider = build_activity_provider(resolved)
 
     app.add_middleware(CSRFMiddleware)

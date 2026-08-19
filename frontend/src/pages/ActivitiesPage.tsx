@@ -24,6 +24,8 @@ export function ActivitiesPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [fitError, setFitError] = useState<string | null>(null);
 
+  const showMockSync = import.meta.env.DEV;
+
   const load = useCallback(
     async (nextOffset: number) => {
       setState({ status: "loading" });
@@ -107,21 +109,25 @@ export function ActivitiesPage() {
           <h1 className="font-display text-3xl">Activities</h1>
           <p className="mt-3 max-w-xl text-ink-soft">
             Your imported runs, one page at a time. Filter by date or type without loading
-            everything into the browser. Sync sample runs imports the development catalog, not
-            Strava. Connect Strava in Settings → Connected services. FIT upload stays on this
-            page.
+            everything into the browser. Connect Strava in Settings → Connected services. FIT
+            upload stays on this page.
+            {showMockSync
+              ? " Sync sample runs imports the development catalog, not Strava."
+              : null}
           </p>
         </div>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            void onSync();
-          }}
-        >
-          <PrimaryButton disabled={syncing}>
-            {syncing ? "Importing…" : "Sync sample runs"}
-          </PrimaryButton>
-        </form>
+        {showMockSync ? (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void onSync();
+            }}
+          >
+            <PrimaryButton disabled={syncing}>
+              {syncing ? "Importing…" : "Sync sample runs"}
+            </PrimaryButton>
+          </form>
+        ) : null}
       </div>
 
       <div className="mt-8 border border-rule bg-paper-2 px-4 py-4">
@@ -237,9 +243,15 @@ function ActivityTable({
   if (data.total === 0) {
     return (
       <p className="mt-8 rounded-sm border border-rule bg-paper-2 px-4 py-3">
-        No activities match these filters. Upload a FIT file, sync sample runs, or run{" "}
-        <code className="font-mono text-sm">python -m app.db.seed</code> from the backend
-        directory.
+        No activities match these filters. Upload a FIT file or connect Strava in Settings.
+        {import.meta.env.DEV ? (
+          <>
+            {" "}
+            Locally you can also sync sample runs or run{" "}
+            <code className="font-mono text-sm">python -m app.db.seed</code> from the backend
+            directory.
+          </>
+        ) : null}
       </p>
     );
   }

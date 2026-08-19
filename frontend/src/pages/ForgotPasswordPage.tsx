@@ -30,8 +30,9 @@ export function ForgotPasswordPage() {
     <section className="max-w-md">
       <h1 className="font-display text-3xl">Reset password</h1>
       <p className="mt-2 text-ink-soft">
-        If an account exists for that email, PaceLab queues a reset message. Email delivery is not
-        configured yet; in local development the token appears on the account page.
+        {import.meta.env.DEV
+          ? "If an account exists for that email, PaceLab queues a reset message. Without SMTP, the token appears on the account page in development."
+          : "If an account exists for that email, PaceLab sends a reset link to that inbox."}
       </p>
       <form className="mt-8 flex flex-col gap-5" onSubmit={(event) => void onSubmit(event)}>
         <FormError message={error} />
