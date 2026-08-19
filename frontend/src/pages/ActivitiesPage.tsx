@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 
 import { FormError, PrimaryButton } from "@/components/Form";
-import { fetchActivities, formatAuthError, syncActivities } from "@/lib/api";
+import { fetchActivities, formatAuthError, importFitFiles, syncActivities } from "@/lib/api";
 import { formatDateTime, formatDistance, formatDuration, formatPace } from "@/lib/format";
 import type { ActivityListResponse } from "@/types/activity";
 
@@ -20,7 +20,9 @@ export function ActivitiesPage() {
   const [activityType, setActivityType] = useState("");
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [syncing, setSyncing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [fitError, setFitError] = useState<string | null>(null);
 
   const load = useCallback(
     async (nextOffset: number) => {
@@ -48,6 +50,7 @@ export function ActivitiesPage() {
   async function onSync() {
     setSyncing(true);
     setNotice(null);
+    setFitError(null);
     try {
       const result = await syncActivities();
       setNotice(
@@ -59,6 +62,35 @@ export function ActivitiesPage() {
       setNotice(formatAuthError(error));
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function onFitUpload(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const input = form.elements.namedItem("fit_files");
+    if (!(input instanceof HTMLInputElement) || !input.files || input.files.length === 0) {
+      setFitError("Choose one or more .fit files.");
+      return;
+    }
+    setUploading(true);
+    setNotice(null);
+    setFitError(null);
+    try {
+      const result = await importFitFiles(Array.from(input.files));
+      const parts = [
+        result.created ? `${result.created} imported` : null,
+        result.updated ? `${result.updated} updated` : null,
+        result.failed ? `${result.failed} failed` : null,
+      ].filter(Boolean);
+      setNotice(`FIT upload: ${parts.join(", ") || "no changes"}.`);
+      form.reset();
+      setOffset(0);
+      await load(0);
+    } catch (error) {
+      setFitError(formatAuthError(error));
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -85,9 +117,38 @@ export function ActivitiesPage() {
           }}
         >
           <PrimaryButton disabled={syncing}>
-            {syncing ? "Importing…" : "Import mock runs"}
+            {syncing ? "Importing…" : "Sync sample runs"}
           </PrimaryButton>
         </form>
+      </div>
+
+      <div className="mt-8 border border-rule bg-paper-2 px-4 py-4">
+        <h2 className="font-display text-2xl">Upload FIT files</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
+          Import a run from your watch or Garmin Connect by uploading the original{" "}
+          <code className="font-mono">.fit</code> file. PaceLab does not log into Garmin and is
+          not a live Garmin connection. In Garmin Connect, open an activity and export the original
+          file, or copy <code className="font-mono">.fit</code> files from the device activity
+          folder.
+        </p>
+        <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={onFitUpload}>
+          <label className="block min-w-0 flex-1">
+            <span className="text-sm text-ink">FIT files</span>
+            <input
+              name="fit_files"
+              type="file"
+              accept=".fit,.fit.gz,application/octet-stream"
+              multiple
+              className="mt-2 w-full border border-rule bg-paper px-3 py-2 text-ink file:mr-3 file:border-0 file:bg-moss-deep file:px-3 file:py-1 file:text-paper"
+            />
+          </label>
+          <PrimaryButton disabled={uploading}>{uploading ? "Uploading…" : "Upload"}</PrimaryButton>
+        </form>
+        {fitError ? (
+          <div className="mt-4">
+            <FormError message={fitError} />
+          </div>
+        ) : null}
       </div>
 
       <form
@@ -174,7 +235,7 @@ function ActivityTable({
   if (data.total === 0) {
     return (
       <p className="mt-8 rounded-sm border border-rule bg-paper-2 px-4 py-3">
-        No activities match these filters. Import mock runs, or run{" "}
+        No activities match these filters. Upload a FIT file, sync sample runs, or run{" "}
         <code className="font-mono text-sm">python -m app.db.seed</code> from the backend
         directory.
       </p>

@@ -2,7 +2,7 @@
 
 PaceLab is a running analytics platform. The product question is whether a runner's fitness is actually improving — not a recreation of Garmin Connect.
 
-This document records decisions that later phases must preserve. **Phase 6 is implemented** (data export, running-data and account deletion, provider disconnect without live OAuth, cookie-consent UI, draft legal pages). Live Garmin OAuth, FIT-file import, and production deploy docs are not started.
+This document records decisions that later phases must preserve. **Phase 7 is implemented** (FIT-file import into existing activity tables). Live Garmin OAuth, Strava OAuth, and production deploy docs are not started.
 
 ## System shape
 
@@ -112,31 +112,51 @@ Disconnect does **not** wipe activity history. Deleting running data does. There
 
 Draft public pages: `/privacy`, `/cookies`, `/terms`. They are marked “Draft for legal review. Not legal advice.” and do not claim GDPR/CCPA certification.
 
+## Phase 7 scope
+
+Phase 7 adds FIT-file import so Garmin-recorded runs can enter PaceLab without live Garmin APIs:
+
+- `POST /api/v1/activities/import/fit` — multipart upload of `.fit` / `.fit.gz` (session user only)
+- Parse in memory with Garmin’s official FIT Python SDK; original bytes are not stored
+- Persist on existing `activities` / `activity_samples` with `provider = "fit"`
+- Drop latitude, longitude, and other GPS fields; no new columns
+- Idempotent via UNIQUE `(user_id, provider, provider_activity_id)` (session identity, else SHA-256 of bytes)
+- Record `provider_connections.last_sync_at` for `fit` on a successful import (last import, not OAuth)
+- Mock sync and seed remain; `GarminActivityProvider` stays a stub; `StravaActivityProvider` is a Phase 8 stub (no HTTP)
+
+Official Garmin Connect Developer Program access for new apps is paused as of 2026-08. FIT upload is a file import from the watch or Garmin Connect, not a live Garmin link.
+
 ## Authentication model
 
 PaceLab sessions are **not** JWTs in localStorage. A row in `auth_sessions` can be revoked on logout or password change. The API derives the current user from that session. Handlers must not trust a client-supplied `user_id`.
 
-Future Garmin OAuth tokens will live on a `GarminConnection` owned by this same `User`. They will be encrypted at rest and never placed in the PaceLab session cookie or API responses.
+Future Garmin OAuth tokens will live on a `GarminConnection` owned by this same `User`. They will be encrypted at rest and never placed in the PaceLab session cookie or API responses. That work is deferred until official developer access exists.
 
-## Garmin integration (future)
+## Ingestion
 
-Garmin data must come from the official Garmin Connect Developer Program using OAuth 2.0.
+- mock — development/seed
+- fit — user-uploaded FIT files (Phase 7)
+- strava — official Strava OAuth (Phase 8, not started)
+- garmin — official Connect Developer Program OAuth (deferred; stub only; programme not accepting new apps as of 2026-08)
+
+Garmin data, when live import exists, must come from the official Garmin Connect Developer Program using OAuth 2.0.
 
 The application will **not**:
 
-- scrape Garmin Connect
-- collect or store Garmin usernames or passwords
-- use unofficial Garmin authentication
-- invent Garmin API endpoints or credentials
+- scrape Garmin Connect or Strava
+- collect or store Garmin or Strava usernames or passwords
+- use unofficial Garmin or Strava authentication
+- invent Garmin or Strava API endpoints or credentials
 
-Activity ingestion is isolated behind a provider interface:
+Activity pull ingestion is isolated behind a provider interface:
 
 - `MockActivityProvider` for development, tests, and seed data
-- `GarminActivityProvider` as a stub until official developer credentials exist (Phase 7). The stub raises; it does not invent HTTP endpoints.
+- `GarminActivityProvider` as a stub until official developer credentials exist. The stub raises; it does not invent HTTP endpoints.
+- `StravaActivityProvider` as a Phase 8 stub. The stub raises; it does not call `strava.com`.
 
-Until Garmin access is granted, PaceLab remains fully usable with mock (and seed) data. FIT-file import is not implemented.
+FIT import is a push path (`app/integrations/fit/` + `app/services/fit_import.py`), not a pull provider. Until Garmin access is granted, PaceLab remains fully usable with mock/seed data and uploaded FIT files.
 
-OAuth client secrets and tokens will live in environment variables / encrypted database columns. They are never returned by the API and never written to logs.
+OAuth client secrets and tokens will live in environment variables / encrypted database columns. They are never returned by the API and never written to logs. Garmin and Strava env vars may be empty; the app still boots.
 
 ## Security baseline already in place
 

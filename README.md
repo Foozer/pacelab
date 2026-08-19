@@ -4,9 +4,9 @@ PaceLab is a running analytics platform. It helps runners understand whether the
 
 This repository is a monorepo. The first user is the developer, but the architecture is intended for a future multi-user SaaS product.
 
-Garmin Connect is **not** scraped. When live import exists, it will use the official Garmin Connect Developer Program and OAuth 2.0. Until those credentials are available, the app runs without Garmin and stores PaceLab accounts independently.
+Garmin Connect is **not** scraped. Live Garmin import waits until the official Connect Developer Program accepts new apps. Until then, upload `.fit` files from your watch or Garmin Connect. PaceLab does not log into Garmin.
 
-## Current status — Phase 6
+## Current status — Phase 7
 
 Completed:
 
@@ -17,11 +17,12 @@ Completed:
 - Phase 5 analytics (aerobic efficiency, Easy Running, Trends, 5K estimate)
 - Download a copy of your PaceLab data
 - Delete running data (keep the account) and delete the account
-- Disconnect a provider sync record (mock today; no live Garmin OAuth)
+- Disconnect a provider sync record (mock or FIT last-import row; no live OAuth)
 - Cookie categories (Necessary always on; Analytics/Marketing off and tracker-free)
 - Draft Privacy Policy, Cookie Policy, and Terms pages (for legal review)
+- FIT-file upload: Garmin-recorded runs enter PaceLab as files, not a live Garmin link
 
-Not started: live Garmin OAuth, FIT-file import, or production deploy docs.
+Not started: live Garmin OAuth, Strava OAuth, or production deploy docs.
 
 ## Requirements
 
@@ -135,7 +136,7 @@ See [docs/configuration.md](docs/configuration.md) for every environment variabl
 
 See [docs/architecture.md](docs/architecture.md) for Garmin, security, and multi-user constraints.
 
-`ACTIVITY_PROVIDER` defaults to `mock`. Setting it to `garmin` selects the stub, which returns `501` until official OAuth exists.
+`ACTIVITY_PROVIDER` defaults to `mock`. Setting it to `garmin` selects the stub, which returns `501` until official OAuth exists. FIT upload does not use that setting.
 
 ## API
 
@@ -160,6 +161,7 @@ See [docs/architecture.md](docs/architecture.md) for Garmin, security, and multi
 | `GET` | `/api/v1/activities/{id}` | One activity (404 if missing or owned by someone else) |
 | `POST` | `/api/v1/activities` | Create an activity for the current user |
 | `POST` | `/api/v1/activities/sync` | Import from the configured provider (mock by default) |
+| `POST` | `/api/v1/activities/import/fit` | Upload one or more `.fit` / `.fit.gz` files for the current user |
 | `GET` | `/api/v1/privacy/export` | JSON file of the current user's PaceLab data |
 | `GET` | `/api/v1/privacy/connections` | Provider name and last sync time for this user |
 | `POST` | `/api/v1/privacy/running-data/delete` | Delete activities, samples, and provider sync rows |
@@ -190,18 +192,20 @@ If the database is down the API returns `503` with `"status": "unhealthy"`. Erro
 }
 ```
 
-## Known limitations (Phase 6)
+## Known limitations (Phase 7)
 
 - No SMTP provider: verification and password-reset emails are recorded in memory. In `ENVIRONMENT=development` they appear on the account page. Tokens are never written to logs.
 - Email confirmation is not required to sign in.
 - Rate limiting is in-process only (one API worker). A shared store can replace it later.
 - Aerobic efficiency and the 5K figure are application estimates, not lab or race results.
 - The default easy heart-rate band is 140–150 bpm and is a query parameter (also stored in the browser if you change it). It is not a personal Zone 2 and is not saved in PostgreSQL.
-- Activity samples omit GPS. That is intentional until there is a product need.
+- Activity samples omit GPS. FIT uploads drop position fields and do not keep the original file.
 - Date filters are UTC calendar days, not the browser’s local timezone. Weekly trend buckets are Monday-based UTC weeks.
 - Privacy Policy, Cookie Policy, and Terms are drafts for legal review, not lawyer-approved and not a certification.
 - Cookie Analytics/Marketing choices are stored in the browser only. They do not enable tracking; there are no trackers.
-- Provider disconnect deletes PaceLab’s `provider_connections` row. It does not call Garmin or revoke OAuth.
+- Provider disconnect deletes PaceLab’s `provider_connections` row. It does not call Garmin or Strava or revoke OAuth.
 - Data export is a copy of PaceLab rows, not a Garmin Connect dump.
+- FIT upload is “import a file from your watch or Garmin Connect”, not “connected to Garmin”. Limits: 8 MB per file, 20 files per request.
 - `GarminActivityProvider` is a stub: it does not call Garmin and must not be given invented endpoints.
+- `StravaActivityProvider` is a stub: it does not call Strava. Official Strava OAuth is Phase 8.
 - Production deployment runbooks land in a later phase.

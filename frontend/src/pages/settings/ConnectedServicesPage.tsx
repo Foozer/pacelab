@@ -50,18 +50,34 @@ export function ConnectedServicesPage() {
       <div>
         <h1 className="font-display text-3xl">Connected services</h1>
         <p className="mt-4 leading-relaxed text-ink-soft">
-          PaceLab does not ask for a Garmin username or password and does not scrape Garmin
-          Connect. Live Garmin linking will use official OAuth 2.0 when developer credentials
-          exist. Today development uses the mock provider; disconnecting removes PaceLab’s
-          local sync record only. It does not revoke a Garmin token, because none is stored.
+          PaceLab does not ask for a Garmin or Strava username or password and does not scrape
+          those sites. Upload FIT files on the Activities page to import runs from your watch.
+          Live Garmin linking waits until the official developer programme accepts new apps.
+          Strava OAuth is next.
+        </p>
+      </div>
+
+      <div className="border border-rule bg-paper-2 px-4 py-4">
+        <h2 className="font-display text-2xl">FIT file import</h2>
+        <p className="mt-2 text-sm text-ink-soft">
+          Available now. Upload <code className="font-mono">.fit</code> files from Garmin Connect
+          or your device. This is a file import, not a live Garmin connection. Location data in
+          the file is discarded.
         </p>
       </div>
 
       <div className="border border-rule bg-paper-2 px-4 py-4">
         <h2 className="font-display text-2xl">Garmin Connect</h2>
         <p className="mt-2 text-sm text-ink-soft">
-          Not connected. Official OAuth is not configured. Do not enter a Garmin password
-          here. Live disconnect and token revoke arrive with official OAuth.
+          Live connect is not available. Official OAuth is deferred. Do not enter a Garmin
+          password here.
+        </p>
+      </div>
+
+      <div className="border border-rule bg-paper-2 px-4 py-4">
+        <h2 className="font-display text-2xl">Strava</h2>
+        <p className="mt-2 text-sm text-ink-soft">
+          Not connected. Official Strava OAuth is planned next and is not available yet.
         </p>
       </div>
 

@@ -1,5 +1,11 @@
 """Activity ingestion providers.
 
-Garmin Connect is accessed only through the official developer program (Phase 7).
-This package must not scrape Garmin, invent API URLs, or store Garmin passwords.
+Ingestion:
+- mock — development/seed
+- fit — user-uploaded FIT files (Phase 7); not an ActivityProvider pull
+- strava — official Strava OAuth (Phase 8, stub only)
+- garmin — official Connect Developer Program OAuth (deferred; stub only)
+
+This package must not scrape Garmin or Strava, invent API URLs, or store
+Garmin/Strava usernames or passwords.
 """
