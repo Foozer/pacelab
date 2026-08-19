@@ -43,6 +43,16 @@ def clear_session_cookie(response: Response, settings: Settings) -> None:
     )
 
 
+def clear_csrf_cookie(response: Response, settings: Settings) -> None:
+    response.delete_cookie(
+        key=CSRF_COOKIE_NAME,
+        path="/",
+        httponly=False,
+        secure=settings.session_cookie_secure,
+        samesite="lax",
+    )
+
+
 def set_csrf_cookie(response: Response, token: str, settings: Settings) -> None:
     response.set_cookie(
         key=CSRF_COOKIE_NAME,

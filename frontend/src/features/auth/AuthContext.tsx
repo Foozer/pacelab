@@ -18,6 +18,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  clearLocalSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -59,9 +60,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const clearLocalSession = useCallback(() => {
+    setUser(null);
+  }, []);
+
   const value = useMemo(
-    () => ({ user, loading, error, refresh, login, register, logout }),
-    [user, loading, error, refresh, login, register, logout],
+    () => ({ user, loading, error, refresh, login, register, logout, clearLocalSession }),
+    [user, loading, error, refresh, login, register, logout, clearLocalSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

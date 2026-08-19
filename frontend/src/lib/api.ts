@@ -16,6 +16,7 @@ import type {
   TrendRangeKey,
   TrendsResponse,
 } from "@/types/activity";
+import type { ProviderConnectionListResponse } from "@/types/privacy";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
@@ -243,4 +244,48 @@ export function fetchAerobicEfficiency(): Promise<AerobicEfficiencyResponse> {
 
 export function syncActivities(): Promise<ActivitySyncResponse> {
   return request<ActivitySyncResponse>("/api/v1/activities/sync", { method: "POST" });
+}
+
+export async function downloadMyData(): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/api/v1/privacy/export`, {
+    credentials: "include",
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw await parseError(response);
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = "pacelab-data.json";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
+export function fetchProviderConnections(): Promise<ProviderConnectionListResponse> {
+  return request<ProviderConnectionListResponse>("/api/v1/privacy/connections");
+}
+
+export function deleteRunningData(password: string): Promise<MessageResponse> {
+  return request<MessageResponse>("/api/v1/privacy/running-data/delete", {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
+}
+
+export function deleteAccount(password: string): Promise<MessageResponse> {
+  return request<MessageResponse>("/api/v1/privacy/account/delete", {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
+}
+
+export function disconnectProvider(provider: string, password: string): Promise<MessageResponse> {
+  return request<MessageResponse>(`/api/v1/privacy/providers/${encodeURIComponent(provider)}/disconnect`, {
+    method: "POST",
+    body: JSON.stringify({ password }),
+  });
 }

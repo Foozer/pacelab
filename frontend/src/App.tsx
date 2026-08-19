@@ -6,15 +6,19 @@ import { RequireAuth } from "@/features/auth/ProtectedRoute";
 import { ActivitiesPage } from "@/pages/ActivitiesPage";
 import { ActivityDetailPage } from "@/pages/ActivityDetailPage";
 import { EasyRunningPage } from "@/pages/EasyRunningPage";
+import { CookiePolicyPage } from "@/pages/CookiePolicyPage";
 import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
+import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
 import { RegisterPage } from "@/pages/RegisterPage";
 import { ResetPasswordPage } from "@/pages/ResetPasswordPage";
+import { TermsOfServicePage } from "@/pages/TermsOfServicePage";
 import { TrendsPage } from "@/pages/TrendsPage";
 import { AccountPage } from "@/pages/settings/AccountPage";
-import { PlaceholderSettingsPage } from "@/pages/settings/PlaceholderSettingsPage";
+import { ConnectedServicesPage } from "@/pages/settings/ConnectedServicesPage";
 import { PreferencesPage } from "@/pages/settings/PreferencesPage";
+import { PrivacyPage } from "@/pages/settings/PrivacyPage";
 import { SettingsLayout } from "@/pages/settings/SettingsLayout";
 import { VerifyEmailPage } from "@/pages/VerifyEmailPage";
 
@@ -30,6 +34,9 @@ export default function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/verify-email" element={<VerifyEmailPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/cookies" element={<CookiePolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
             <Route
               path="/easy-running"
               element={
@@ -72,24 +79,8 @@ export default function App() {
             >
               <Route index element={<Navigate to="account" replace />} />
               <Route path="account" element={<AccountPage />} />
-              <Route
-                path="privacy"
-                element={
-                  <PlaceholderSettingsPage
-                    title="Privacy"
-                    body="Export, deletion, and cookie controls arrive in a later phase. Account deletion will cascade to your running data."
-                  />
-                }
-              />
-              <Route
-                path="connected-services"
-                element={
-                  <PlaceholderSettingsPage
-                    title="Connected services"
-                    body="Garmin Connect will use official OAuth 2.0 once developer credentials are available. PaceLab will not ask for a Garmin password."
-                  />
-                }
-              />
+              <Route path="privacy" element={<PrivacyPage />} />
+              <Route path="connected-services" element={<ConnectedServicesPage />} />
               <Route path="preferences" element={<PreferencesPage />} />
             </Route>
           </Route>

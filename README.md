@@ -6,7 +6,7 @@ This repository is a monorepo. The first user is the developer, but the architec
 
 Garmin Connect is **not** scraped. When live import exists, it will use the official Garmin Connect Developer Program and OAuth 2.0. Until those credentials are available, the app runs without Garmin and stores PaceLab accounts independently.
 
-## Current status — Phase 5
+## Current status — Phase 6
 
 Completed:
 
@@ -14,14 +14,14 @@ Completed:
 - Phase 2 authentication (sessions, CSRF, Argon2id, account pages)
 - Phase 3 activity import (models, mock provider, sync, seed)
 - Phase 4 dashboard, activity history, and activity-detail charts
-- Aerobic efficiency (pace at a similar heart rate; Improving / Stable / Not enough data)
-- Easy Running page with a configurable heart-rate range (default 140–150 bpm)
-- Trends page (pace, HR, weekly distance, frequency, comparable pace; 4w–all)
-- Simple 5K estimate (Riegel scaling, labelled as an estimate)
-- Dashboard cards for 5K estimate, easy pace, and aerobic efficiency
-- Heart-rate range control on Easy Running, Trends, and Settings → Preferences (browser only; default 140–150 bpm)
+- Phase 5 analytics (aerobic efficiency, Easy Running, Trends, 5K estimate)
+- Download a copy of your PaceLab data
+- Delete running data (keep the account) and delete the account
+- Disconnect a provider sync record (mock today; no live Garmin OAuth)
+- Cookie categories (Necessary always on; Analytics/Marketing off and tracker-free)
+- Draft Privacy Policy, Cookie Policy, and Terms pages (for legal review)
 
-Not started: privacy export/deletion, cookie-consent UI, live Garmin OAuth, FIT-file import, or production deploy docs.
+Not started: live Garmin OAuth, FIT-file import, or production deploy docs.
 
 ## Requirements
 
@@ -48,7 +48,10 @@ Then open:
 - Easy running: http://localhost:5173/easy-running
 - Trends: http://localhost:5173/trends
 - Activities: http://localhost:5173/activities
-- Settings: http://localhost:5173/settings/account (Preferences: `/settings/preferences`)
+- Settings: http://localhost:5173/settings/account (Privacy: `/settings/privacy`, Preferences: `/settings/preferences`)
+- Privacy policy draft: http://localhost:5173/privacy
+- Cookie policy draft: http://localhost:5173/cookies
+- Terms draft: http://localhost:5173/terms
 - API health: http://localhost:8000/health
 - OpenAPI (development only): http://localhost:8000/docs
 
@@ -157,8 +160,13 @@ See [docs/architecture.md](docs/architecture.md) for Garmin, security, and multi
 | `GET` | `/api/v1/activities/{id}` | One activity (404 if missing or owned by someone else) |
 | `POST` | `/api/v1/activities` | Create an activity for the current user |
 | `POST` | `/api/v1/activities/sync` | Import from the configured provider (mock by default) |
+| `GET` | `/api/v1/privacy/export` | JSON file of the current user's PaceLab data |
+| `GET` | `/api/v1/privacy/connections` | Provider name and last sync time for this user |
+| `POST` | `/api/v1/privacy/running-data/delete` | Delete activities, samples, and provider sync rows |
+| `POST` | `/api/v1/privacy/account/delete` | Delete the account (CASCADE) and clear cookies |
+| `POST` | `/api/v1/privacy/providers/{provider}/disconnect` | Delete this user's provider_connections row |
 
-Dashboard, activities, and analytics routes require a signed-in session (`401` otherwise). Mutating `/api` routes also require the CSRF cookie plus `X-CSRF-Token`. Session identity is taken from the `pacelab_session` cookie, never from a client-supplied `user_id`. Heart-rate query params must satisfy `40 ≤ hr_min < hr_max ≤ 220`.
+Dashboard, activities, analytics, and privacy routes require a signed-in session (`401` otherwise). Mutating `/api` routes also require the CSRF cookie plus `X-CSRF-Token`. Destructive privacy POSTs also require the current password. Session identity is taken from the `pacelab_session` cookie, never from a client-supplied `user_id`. Heart-rate query params must satisfy `40 ≤ hr_min < hr_max ≤ 220`.
 
 Successful health payload:
 
@@ -182,7 +190,7 @@ If the database is down the API returns `503` with `"status": "unhealthy"`. Erro
 }
 ```
 
-## Known limitations (Phase 5)
+## Known limitations (Phase 6)
 
 - No SMTP provider: verification and password-reset emails are recorded in memory. In `ENVIRONMENT=development` they appear on the account page. Tokens are never written to logs.
 - Email confirmation is not required to sign in.
@@ -191,6 +199,9 @@ If the database is down the API returns `503` with `"status": "unhealthy"`. Erro
 - The default easy heart-rate band is 140–150 bpm and is a query parameter (also stored in the browser if you change it). It is not a personal Zone 2 and is not saved in PostgreSQL.
 - Activity samples omit GPS. That is intentional until there is a product need.
 - Date filters are UTC calendar days, not the browser’s local timezone. Weekly trend buckets are Monday-based UTC weeks.
-- Privacy export/deletion, cookie-consent UI, and legal pages are later phases.
+- Privacy Policy, Cookie Policy, and Terms are drafts for legal review, not lawyer-approved and not a certification.
+- Cookie Analytics/Marketing choices are stored in the browser only. They do not enable tracking; there are no trackers.
+- Provider disconnect deletes PaceLab’s `provider_connections` row. It does not call Garmin or revoke OAuth.
+- Data export is a copy of PaceLab rows, not a Garmin Connect dump.
 - `GarminActivityProvider` is a stub: it does not call Garmin and must not be given invented endpoints.
 - Production deployment runbooks land in a later phase.
