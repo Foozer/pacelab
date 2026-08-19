@@ -5,6 +5,7 @@ import { DashboardTrendChart } from "@/components/charts/RunCharts";
 import { FormError } from "@/components/Form";
 import { fetchDashboard, formatAuthError } from "@/lib/api";
 import { formatDateTime, formatDistance, formatDuration, formatPace, formatPaceSeconds } from "@/lib/format";
+import { readStoredHeartRateRange } from "@/lib/hrRange";
 import type {
   AerobicEfficiencyMetric,
   DashboardResponse,
@@ -22,7 +23,8 @@ export function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchDashboard()
+    const range = readStoredHeartRateRange();
+    fetchDashboard(range.min, range.max)
       .then((data) => {
         if (!cancelled) {
           setState({ status: "ready", data });

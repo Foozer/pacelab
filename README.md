@@ -153,7 +153,7 @@ See [docs/architecture.md](docs/architecture.md) for Garmin, security, and multi
 | `POST` | `/api/v1/auth/password-reset/confirm` | Set a new password from a reset token |
 | `GET` | `/api/v1/users/me` | Current authenticated user |
 | `POST` | `/api/v1/users/me/password` | Change password |
-| `GET` | `/api/v1/dashboard` | Last-7-day volume, recent runs, pace/HR trend, 5K estimate, easy pace, aerobic efficiency |
+| `GET` | `/api/v1/dashboard` | Last-7-day volume, recent runs, pace/HR trend, 5K estimate, easy pace, aerobic efficiency (`hr_min`, `hr_max` for easy pace) |
 | `GET` | `/api/v1/analytics/easy-running` | Easy-range aggregates and pace trend (`hr_min`, `hr_max`) |
 | `GET` | `/api/v1/analytics/trends` | Trend series (`range` = 4w/8w/3m/6m/1y/all, plus HR band) |
 | `GET` | `/api/v1/analytics/aerobic-efficiency` | Efficiency direction and score over easy/moderate runs |

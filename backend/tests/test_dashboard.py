@@ -66,6 +66,8 @@ def test_dashboard_aggregates_current_user_only(client: TestClient) -> None:
     assert "estimate" in body["five_k_estimate"]["note"].lower()
     assert body["easy_pace"]["available"] is True
     assert body["easy_pace"]["run_count"] == 1
+    assert body["easy_pace"]["heart_rate_min"] == 140
+    assert body["easy_pace"]["heart_rate_max"] == 150
     assert body["aerobic_efficiency"]["available"] is True
     assert body["aerobic_efficiency"]["qualifying_run_count"] == 1
 
@@ -100,3 +102,34 @@ def test_dashboard_weekly_ignores_older_runs(client: TestClient) -> None:
     assert len(body["pace_heart_rate_trend"]) == 2
     assert body["pace_heart_rate_trend"][0]["activity_id"] == old.json()["id"]
     assert body["pace_heart_rate_trend"][1]["pace_seconds_per_km"] == 300.0
+
+
+def test_dashboard_easy_pace_uses_requested_heart_rate_band(client: TestClient) -> None:
+    now = datetime.now(UTC)
+    register_account(client, "runner@example.com")
+    headers = csrf_headers(client)
+    in_custom = _payload_at(
+        "z2-run",
+        now - timedelta(hours=2),
+        distance_meters=5000,
+        duration_seconds=2100,
+    )
+    in_custom["average_heart_rate"] = 120
+    in_custom["samples"] = []
+    created = client.post("/api/v1/activities", json=in_custom, headers=headers)
+    assert created.status_code == 201
+
+    default_band = client.get("/api/v1/dashboard").json()
+    assert default_band["easy_pace"]["available"] is False
+
+    custom = client.get("/api/v1/dashboard", params={"hr_min": 112, "hr_max": 132})
+    assert custom.status_code == 200
+    easy = custom.json()["easy_pace"]
+    assert easy["available"] is True
+    assert easy["heart_rate_min"] == 112
+    assert easy["heart_rate_max"] == 132
+    assert easy["run_count"] == 1
+
+    inverted = client.get("/api/v1/dashboard", params={"hr_min": 150, "hr_max": 140})
+    assert inverted.status_code == 422
+    assert inverted.json()["error"]["code"] == "VALIDATION_ERROR"

@@ -26,8 +26,9 @@ export function PreferencesPage() {
       <div>
         <h1 className="font-display text-3xl">Preferences</h1>
         <p className="mt-4 leading-relaxed text-ink-soft">
-          Choose the heart-rate window used for easy running and comparable-pace charts. This
-          stays in this browser; PaceLab does not store a personal Zone 2 on the server.
+          Choose the heart-rate window used for easy running, the dashboard easy-pace card, and
+          comparable-pace charts. This stays in this browser; PaceLab does not store a personal
+          Zone 2 on the server.
         </p>
       </div>
       <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-4">

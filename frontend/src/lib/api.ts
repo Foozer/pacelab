@@ -214,8 +214,12 @@ export function fetchActivity(activityId: string): Promise<ActivityDetail> {
   return request<ActivityDetail>(`/api/v1/activities/${activityId}`);
 }
 
-export function fetchDashboard(): Promise<DashboardResponse> {
-  return request<DashboardResponse>("/api/v1/dashboard");
+export function fetchDashboard(hrMin: number, hrMax: number): Promise<DashboardResponse> {
+  const params = new URLSearchParams({
+    hr_min: String(hrMin),
+    hr_max: String(hrMax),
+  });
+  return request<DashboardResponse>(`/api/v1/dashboard?${params.toString()}`);
 }
 
 export function fetchEasyRunning(hrMin: number, hrMax: number): Promise<EasyRunningResponse> {

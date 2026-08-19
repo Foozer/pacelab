@@ -22,6 +22,8 @@ from app.schemas.dashboard import (
 )
 from app.services.analytics import dashboard_metrics_for_user
 from app.services.running_metrics import (
+    DEFAULT_EASY_HEART_RATE_MAX,
+    DEFAULT_EASY_HEART_RATE_MIN,
     VolumeRow,
     calculate_pace,
     calculate_training_volume,
@@ -37,6 +39,8 @@ async def get_dashboard_for_user(
     *,
     user_id: uuid.UUID,
     now: datetime | None = None,
+    hr_min: int = DEFAULT_EASY_HEART_RATE_MIN,
+    hr_max: int = DEFAULT_EASY_HEART_RATE_MAX,
 ) -> DashboardResponse:
     moment = now or datetime.now(UTC)
     if moment.tzinfo is None:
@@ -104,6 +108,8 @@ async def get_dashboard_for_user(
         session,
         user_id=user_id,
         now=moment,
+        hr_min=hr_min,
+        hr_max=hr_max,
     )
 
     return DashboardResponse(
