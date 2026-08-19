@@ -69,6 +69,12 @@ export function AccountPage() {
       <div>
         <h1 className="font-display text-3xl">Account</h1>
         <p className="mt-2 text-ink-soft">Signed in as {user.email}.</p>
+        <p className="mt-3 text-sm text-ink-soft">
+          <Link to="/settings/privacy" className="underline">
+            Privacy
+          </Link>
+          : download your data, delete running data, or delete this account.
+        </p>
       </div>
 
       <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">

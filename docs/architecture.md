@@ -2,7 +2,7 @@
 
 PaceLab is a running analytics platform. The product question is whether a runner's fitness is actually improving — not a recreation of Garmin Connect.
 
-This document records decisions that later phases must preserve. **Phase 5 is implemented** (analytics services, Easy Running, Trends, labelled 5K estimate). Privacy export, live Garmin OAuth, FIT-file import, and production deploy docs are not started.
+This document records decisions that later phases must preserve. **Phase 6 is implemented** (data export, running-data and account deletion, provider disconnect without live OAuth, cookie-consent UI, draft legal pages). Live Garmin OAuth, FIT-file import, and production deploy docs are not started.
 
 ## System shape
 
@@ -94,6 +94,24 @@ For each run-type activity, pause samples (speed ≤ 0.4 m/s) and implausible he
 
 `estimate_5k_time` scales recent 3–16 km runs with Riegel’s formula `T * (5000 / D) ** 1.06`, then takes the median of the three fastest of those times. At least two qualifying runs in 56 days are required. The number is an estimate, not a race prediction. A later model can replace the function body without changing the API shape (`available`, `estimated_seconds`, `note`).
 
+## Phase 6 scope
+
+Phase 6 adds privacy controls that do not weaken the Phase 2–5 security baseline:
+
+- `GET /api/v1/privacy/export` — JSON file of the current user's PaceLab data (not a Garmin dump)
+- `POST /api/v1/privacy/running-data/delete` — delete activities, samples, and this user's provider_connections; keep the account
+- `POST /api/v1/privacy/account/delete` — hard-delete the user (CASCADE); clear session and CSRF cookies
+- `POST /api/v1/privacy/providers/{provider}/disconnect` — delete that user's `provider_connections` row only; does not call Garmin
+- `GET /api/v1/privacy/connections` — provider name and `last_sync_at` for the settings UI
+
+Identity always comes from `pacelab_session`. Destructive POSTs require CSRF plus the current password (`extra="forbid"`). Export and delete are rate-limited per user outside the test environment.
+
+Export assembly lives in `app/services/privacy.py` (schema documented there). The file includes public account fields (including `updated_at`), activities with samples, and provider name / last sync. It excludes `password_hash`, `auth_sessions`, `user_tokens`, CSRF/session secrets, `SECRET_KEY`, other users, and invented OAuth token fields. Samples have no GPS columns.
+
+Disconnect does **not** wipe activity history. Deleting running data does. There is no `deleted_at` / soft-delete. No new privacy tables: cookie Analytics/Marketing choices are stored in `localStorage` (same pattern as the heart-rate band). Necessary cookies (`pacelab_session`, `pacelab_csrf`) cannot be disabled. Optional categories default to off and do not inject scripts or pixels.
+
+Draft public pages: `/privacy`, `/cookies`, `/terms`. They are marked “Draft for legal review. Not legal advice.” and do not claim GDPR/CCPA certification.
+
 ## Authentication model
 
 PaceLab sessions are **not** JWTs in localStorage. A row in `auth_sessions` can be revoked on logout or password change. The API derives the current user from that session. Handlers must not trust a client-supplied `user_id`.
@@ -131,7 +149,7 @@ OAuth client secrets and tokens will live in environment variables / encrypted d
 - Docker images run as a non-root user (`pacelab`)
 - Health checks do not expose stack traces
 
-Session cookies, CSRF, Argon2id password hashing, and account endpoints are in place as of Phase 2. Privacy export/deletion and cookie-consent UI arrive later and must not weaken this baseline.
+Session cookies, CSRF, Argon2id password hashing, and account endpoints are in place as of Phase 2. Privacy export, deletion, cookie-consent UI, and draft legal pages are in place as of Phase 6 and must not be weakened by later Garmin or billing work.
 
 ## Multi-user readiness
 

@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 
+import { CookieBanner } from "@/components/CookieBanner";
 import { useAuth } from "@/features/auth/AuthContext";
 
 export function AppLayout() {
@@ -97,8 +98,22 @@ export function AppLayout() {
       <main className="flex flex-1 flex-col gap-10 pt-10">
         <Outlet />
       </main>
+      <CookieBanner />
       <footer className="mt-auto border-t border-rule pt-6 text-sm text-ink-soft">
-        PaceLab · necessary session cookies only · Garmin integration uses official OAuth only
+        PaceLab · necessary session cookies only (<code>pacelab_session</code>,{" "}
+        <code>pacelab_csrf</code>) ·{" "}
+        <Link to="/privacy" className="underline">
+          Privacy
+        </Link>{" "}
+        ·{" "}
+        <Link to="/cookies" className="underline">
+          Cookies
+        </Link>{" "}
+        ·{" "}
+        <Link to="/terms" className="underline">
+          Terms
+        </Link>{" "}
+        · Garmin integration uses official OAuth only
       </footer>
     </div>
   );

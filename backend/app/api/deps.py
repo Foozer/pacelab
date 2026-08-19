@@ -45,13 +45,21 @@ def get_recording_email_sender(request: Request) -> RecordingEmailSender:
     return sender
 
 
-def enforce_rate_limit(request: Request, action: str, *, limit: int, window_seconds: int) -> None:
+def enforce_rate_limit(
+    request: Request,
+    action: str,
+    *,
+    limit: int,
+    window_seconds: int,
+    identity: str | None = None,
+) -> None:
     settings = request.app.state.settings
     if settings.environment == "test":
         return
     limiter: InMemoryRateLimiter = request.app.state.rate_limiter
     host = request.client.host if request.client is not None else "unknown"
-    if not limiter.allow(f"{action}:{host}", limit=limit, window_seconds=window_seconds):
+    key = f"{action}:{identity}" if identity else f"{action}:{host}"
+    if not limiter.allow(key, limit=limit, window_seconds=window_seconds):
         raise AppError(
             "RATE_LIMITED",
             "Too many attempts. Please wait and try again.",
