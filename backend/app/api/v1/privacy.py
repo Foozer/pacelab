@@ -7,9 +7,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import enforce_rate_limit, get_current_user
+from app.api.deps import enforce_rate_limit, get_current_user, get_strava_client
 from app.core.security import clear_csrf_cookie, clear_session_cookie
 from app.db.session import get_db
+from app.integrations.strava.client import StravaApiClient
 from app.models.user import User
 from app.schemas.auth import MessageResponse
 from app.schemas.privacy import (
@@ -18,6 +19,7 @@ from app.schemas.privacy import (
     UserDataExport,
 )
 from app.services import privacy as privacy_service
+from app.services import strava as strava_service
 
 router = APIRouter(prefix="/privacy", tags=["privacy"])
 
@@ -107,6 +109,7 @@ async def disconnect_provider(
     provider: Annotated[str, Path(min_length=1, max_length=32)],
     db: AsyncSession = Depends(get_db),
     user: User = Depends(get_current_user),
+    strava_client: StravaApiClient = Depends(get_strava_client),
 ) -> MessageResponse:
     enforce_rate_limit(
         request,
@@ -116,10 +119,23 @@ async def disconnect_provider(
         identity=str(user.id),
     )
     privacy_service.require_current_password(user, payload.password)
+    if provider == "strava":
+        await strava_service.disconnect_strava(
+            db,
+            user=user,
+            settings=request.app.state.settings,
+            client=strava_client,
+        )
+        return MessageResponse(
+            message=(
+                "Strava is disconnected. PaceLab still has your imported runs. "
+                "This is not a Garmin disconnect."
+            )
+        )
     await privacy_service.disconnect_provider(db, user, provider)
     return MessageResponse(
         message=(
             "PaceLab no longer has a sync record for that provider. "
-            "Live Garmin disconnect and token revoke arrive with official OAuth."
+            "Your stored runs are kept."
         )
     )

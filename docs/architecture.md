@@ -2,7 +2,7 @@
 
 PaceLab is a running analytics platform. The product question is whether a runner's fitness is actually improving — not a recreation of Garmin Connect.
 
-This document records decisions that later phases must preserve. **Phase 7 is implemented** (FIT-file import into existing activity tables). Live Garmin OAuth, Strava OAuth, and production deploy docs are not started.
+This document records decisions that later phases must preserve. **Phase 8 is implemented** (official Strava OAuth + activity sync). Live Garmin OAuth and production deploy docs are not started.
 
 ## System shape
 
@@ -62,7 +62,7 @@ Date filters on `GET /api/v1/activities` are inclusive calendar dates interprete
 
 Time-series samples do **not** store latitude/longitude. GPS is sensitive location data and is not required for MVP pace/HR analytics. A future Garmin mapping can drop those fields even if the official API returns them.
 
-`provider_connections` records `last_sync_at` only. Encrypted Garmin OAuth tokens belong on a later `GarminConnection` (or extra columns) and must never appear in API responses.
+`provider_connections` records `last_sync_at` only. Encrypted Strava OAuth tokens live on `strava_connections` and must never appear in API responses. Garmin tokens remain deferred.
 
 ## Phase 5 scope
 
@@ -101,7 +101,7 @@ Phase 6 adds privacy controls that do not weaken the Phase 2–5 security baseli
 - `GET /api/v1/privacy/export` — JSON file of the current user's PaceLab data (not a Garmin dump)
 - `POST /api/v1/privacy/running-data/delete` — delete activities, samples, and this user's provider_connections; keep the account
 - `POST /api/v1/privacy/account/delete` — hard-delete the user (CASCADE); clear session and CSRF cookies
-- `POST /api/v1/privacy/providers/{provider}/disconnect` — delete that user's `provider_connections` row only; does not call Garmin
+- `POST /api/v1/privacy/providers/{provider}/disconnect` — delete that user's `provider_connections` row; for `strava`, also drop `strava_connections` and revoke the Strava token. Does not delete activity history. Not a Garmin disconnect.
 - `GET /api/v1/privacy/connections` — provider name and `last_sync_at` for the settings UI
 
 Identity always comes from `pacelab_session`. Destructive POSTs require CSRF plus the current password (`extra="forbid"`). Export and delete are rate-limited per user outside the test environment.
@@ -122,9 +122,26 @@ Phase 7 adds FIT-file import so Garmin-recorded runs can enter PaceLab without l
 - Drop latitude, longitude, and other GPS fields; no new columns
 - Idempotent via UNIQUE `(user_id, provider, provider_activity_id)` (session identity, else SHA-256 of bytes)
 - Record `provider_connections.last_sync_at` for `fit` on a successful import (last import, not OAuth)
-- Mock sync and seed remain; `GarminActivityProvider` stays a stub; `StravaActivityProvider` is a Phase 8 stub (no HTTP)
+- Mock sync and seed remain; `GarminActivityProvider` stays a stub; official Strava OAuth is Phase 8
 
 Official Garmin Connect Developer Program access for new apps is paused as of 2026-08. FIT upload is a file import from the watch or Garmin Connect, not a live Garmin link.
+
+## Phase 8 scope
+
+Phase 8 adds official Strava OAuth so PaceLab can pull a user’s activities without pretending to be a Garmin partner:
+
+- `GET /api/v1/strava/connect` — 302 to Strava’s authorize URL (`activity:read_all`); 501 if client id/secret/redirect or `ENCRYPTION_KEY` is unset
+- `GET /api/v1/strava/callback` — authorization-code exchange; `state` bound to the PaceLab session; then redirect to Settings
+- `POST /api/v1/strava/sync` — pull recent Strava activities into existing tables via `StravaActivityProvider` + `sync_user_activities`
+- `GET /api/v1/strava/status` — configured / connected / needs_reconnect / last_sync_at (never tokens)
+- Tokens on `strava_connections` (Fernet-encrypted access + refresh). `provider_connections` still holds `last_sync_at` only
+- Disconnect `provider=strava` deletes the token row, revokes via `POST https://www.strava.com/oauth/revoke`, keeps activity history
+- First sync: last 90 days, at most 3 list pages of 30, streams for at most 40 activities
+- Incremental sync uses `after` from last successful Strava `last_sync_at` / newest stored Strava `started_at`
+- Drop `latlng` and map polylines; indoor/treadmill runs still import
+- `POST /api/v1/activities/sync` remains mock (or the Garmin stub). FIT upload stays
+
+PaceLab is not a Strava or Garmin partner. Connecting Strava is “connected to Strava”, not “connected to Garmin”.
 
 ## Authentication model
 
@@ -136,7 +153,7 @@ Future Garmin OAuth tokens will live on a `GarminConnection` owned by this same 
 
 - mock — development/seed
 - fit — user-uploaded FIT files (Phase 7)
-- strava — official Strava OAuth (Phase 8, not started)
+- strava — official Strava OAuth (Phase 8)
 - garmin — official Connect Developer Program OAuth (deferred; stub only; programme not accepting new apps as of 2026-08)
 
 Garmin data, when live import exists, must come from the official Garmin Connect Developer Program using OAuth 2.0.
@@ -152,11 +169,11 @@ Activity pull ingestion is isolated behind a provider interface:
 
 - `MockActivityProvider` for development, tests, and seed data
 - `GarminActivityProvider` as a stub until official developer credentials exist. The stub raises; it does not invent HTTP endpoints.
-- `StravaActivityProvider` as a Phase 8 stub. The stub raises; it does not call `strava.com`.
+- `StravaActivityProvider` maps official Strava JSON to `ProviderActivity`. HTTP uses documented `strava.com` OAuth and API v3 URLs only.
 
-FIT import is a push path (`app/integrations/fit/` + `app/services/fit_import.py`), not a pull provider. Until Garmin access is granted, PaceLab remains fully usable with mock/seed data and uploaded FIT files.
+FIT import is a push path (`app/integrations/fit/` + `app/services/fit_import.py`), not a pull provider. The same user may have `fit`, `mock`, and `strava` rows. This phase does not merge FIT and Strava copies of the same physical run.
 
-OAuth client secrets and tokens will live in environment variables / encrypted database columns. They are never returned by the API and never written to logs. Garmin and Strava env vars may be empty; the app still boots.
+OAuth client secrets live in environment variables. Strava access/refresh tokens are Fernet-encrypted in `strava_connections`. They are never returned by the API, never written to logs, and never included in privacy export. Garmin and Strava env vars may be empty; the app still boots. Connecting Strava requires `ENCRYPTION_KEY`.
 
 ## Security baseline already in place
 

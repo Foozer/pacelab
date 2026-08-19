@@ -1,7 +1,7 @@
 """Per-user activity provider sync state.
 
-This is not Garmin or Strava OAuth. Token columns belong in a later phase and must never
-be returned by the API. `last_sync_at` is last mock sync or last FIT import.
+This is not an OAuth token store. `last_sync_at` is last mock sync, last FIT import,
+or last successful Strava pull. Encrypted Strava tokens live on `strava_connections`.
 """
 
 from __future__ import annotations

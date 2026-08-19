@@ -48,7 +48,8 @@ class ActivityProvider(Protocol):
     Implementations must not accept Garmin usernames or passwords. Live Garmin
     OAuth is deferred until the official Connect Developer Program accepts new
     apps. Garmin-recorded runs enter PaceLab today via FIT-file upload, not
-    this protocol. Strava OAuth is Phase 8.
+    this protocol. Official Strava OAuth is a per-user connection
+    (`StravaActivityProvider`), not ACTIVITY_PROVIDER.
     """
 
     provider_name: str

@@ -18,6 +18,7 @@ import type {
   TrendsResponse,
 } from "@/types/activity";
 import type { ProviderConnectionListResponse } from "@/types/privacy";
+import type { StravaStatus } from "@/types/strava";
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
@@ -283,6 +284,18 @@ export async function downloadMyData(): Promise<void> {
 
 export function fetchProviderConnections(): Promise<ProviderConnectionListResponse> {
   return request<ProviderConnectionListResponse>("/api/v1/privacy/connections");
+}
+
+export function fetchStravaStatus(): Promise<StravaStatus> {
+  return request<StravaStatus>("/api/v1/strava/status");
+}
+
+export function stravaConnectUrl(): string {
+  return `${apiBaseUrl}/api/v1/strava/connect`;
+}
+
+export function syncStravaActivities(): Promise<ActivitySyncResponse> {
+  return request<ActivitySyncResponse>("/api/v1/strava/sync", { method: "POST" });
 }
 
 export function deleteRunningData(password: string): Promise<MessageResponse> {

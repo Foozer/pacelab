@@ -28,7 +28,7 @@ class ExportAccount(BaseModel):
 
 
 class ExportProviderConnection(BaseModel):
-    """Sync record only. PaceLab does not store Garmin OAuth tokens yet."""
+    """Sync record only. Encrypted Strava tokens are never exported."""
 
     model_config = ConfigDict(extra="forbid")
 

@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.activity import Activity
     from app.models.auth_session import AuthSession
     from app.models.provider_connection import ProviderConnection
+    from app.models.strava_connection import StravaConnection
     from app.models.user_token import UserToken
 
 
@@ -53,4 +54,9 @@ class User(Base):
     provider_connections: Mapped[list[ProviderConnection]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+    strava_connection: Mapped[StravaConnection | None] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        uselist=False,
     )

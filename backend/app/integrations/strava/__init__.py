@@ -1,6 +1,7 @@
-"""Official Strava OAuth integration (Phase 8, not started).
+"""Official Strava OAuth package.
 
-This package must not call strava.com or store unofficial credentials.
+Uses https://www.strava.com/oauth/* and https://www.strava.com/api/v3/*.
+Does not scrape Strava or store usernames/passwords.
 """
 
 from app.integrations.strava.provider import StravaActivityProvider
