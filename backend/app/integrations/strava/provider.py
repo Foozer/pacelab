@@ -1,8 +1,7 @@
-"""Garmin Connect provider stub.
+"""Strava provider stub.
 
-Do not add HTTP clients, URLs, or unofficial Garmin libraries here. Official
-OAuth 2.0 waits until the Connect Developer Program accepts new apps. Until
-then Garmin-recorded runs are imported as .fit files, not through this class.
+Do not add HTTP clients or unofficial Strava libraries here. Official OAuth
+arrives in Phase 8. Until then PaceLab does not claim a Strava connection.
 """
 
 from __future__ import annotations
@@ -16,15 +15,14 @@ from app.integrations.exceptions import ProviderNotConfiguredError
 from app.integrations.protocol import ProviderActivity
 
 _MESSAGE = (
-    "Live Garmin Connect import is not implemented. Official OAuth 2.0 will be "
-    "added if Garmin’s developer programme reopens. Upload a .fit file to "
-    "import a run from your watch. PaceLab does not scrape Garmin or store "
-    "Garmin usernames or passwords."
+    "Strava import is not implemented. Official Strava OAuth will be added in "
+    "Phase 8. PaceLab does not call strava.com and does not store Strava "
+    "usernames or passwords."
 )
 
 
-class GarminActivityProvider:
-    provider_name = "garmin"
+class StravaActivityProvider:
+    provider_name = "strava"
 
     def _unavailable(self) -> NoReturn:
         raise ProviderNotConfiguredError(provider=self.provider_name, message=_MESSAGE)

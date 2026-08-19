@@ -55,6 +55,24 @@ export type ActivitySyncResponse = {
   last_sync_at: string;
 };
 
+export type FitImportFileResult = {
+  filename: string;
+  status: "created" | "updated" | "skipped" | "failed" | string;
+  activity_id: string | null;
+  provider_activity_id: string | null;
+  error: { code: string; message: string } | null;
+};
+
+export type FitImportResponse = {
+  provider: string;
+  created: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  files: FitImportFileResult[];
+  last_sync_at: string | null;
+};
+
 export type UnavailableMetric = {
   available: false;
   label: string;

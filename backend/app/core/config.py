@@ -30,9 +30,15 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
     allowed_hosts: str = "localhost,127.0.0.1"
 
+    # Official Garmin OAuth — deferred (developer programme not accepting new apps
+    # as of 2026-08). Unused at runtime. FIT upload is the Garmin-file path.
     garmin_client_id: str = ""
     garmin_client_secret: str = ""
     garmin_redirect_uri: str = ""
+    # Official Strava OAuth — Phase 8, unused. Not required to boot.
+    strava_client_id: str = ""
+    strava_client_secret: str = ""
+    strava_redirect_uri: str = ""
     activity_provider: Literal["mock", "garmin"] = "mock"
 
     @field_validator("database_url")

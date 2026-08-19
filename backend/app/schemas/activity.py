@@ -91,3 +91,32 @@ class ActivitySyncResponse(BaseModel):
     updated: int
     total: int
     last_sync_at: datetime
+
+
+class FitImportErrorPublic(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str
+    message: str
+
+
+class FitImportFileResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    filename: str
+    status: str
+    activity_id: UUID | None = None
+    provider_activity_id: str | None = None
+    error: FitImportErrorPublic | None = None
+
+
+class FitImportResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    provider: str = "fit"
+    created: int
+    updated: int
+    skipped: int
+    failed: int
+    files: list[FitImportFileResult]
+    last_sync_at: datetime | None

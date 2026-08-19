@@ -129,6 +129,20 @@ async def get_last_sync_at(
     return connection.last_sync_at
 
 
+async def get_latest_sync_at(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+) -> datetime | None:
+    """Most recent mock sync or FIT import for this user (display 'last import')."""
+    result = await session.execute(
+        select(func.max(ProviderConnection.last_sync_at)).where(
+            ProviderConnection.user_id == user_id
+        )
+    )
+    return result.scalar_one_or_none()
+
+
 async def create_activity_for_user(
     session: AsyncSession,
     *,

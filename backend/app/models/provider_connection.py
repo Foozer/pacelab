@@ -1,7 +1,7 @@
 """Per-user activity provider sync state.
 
-This is not Garmin OAuth. Token columns belong in a later phase and must never
-be returned by the API. Phase 3 only records that a provider was synced.
+This is not Garmin or Strava OAuth. Token columns belong in a later phase and must never
+be returned by the API. `last_sync_at` is last mock sync or last FIT import.
 """
 
 from __future__ import annotations

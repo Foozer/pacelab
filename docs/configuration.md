@@ -9,7 +9,7 @@ Copy `.env.example` to `.env` before starting Docker Compose. Never commit `.env
 | `APP_VERSION` | no | Version string returned by `GET /health`. Defaults to `0.1.0`. |
 | `LOG_LEVEL` | no | `DEBUG`, `INFO`, `WARNING`, or `ERROR`. Production logs JSON to stdout. |
 | `SECRET_KEY` | yes | Signing secret reserved for future signed values. Use a long random value in any deployed environment. Session cookies use unguessable tokens hashed at rest rather than this key. |
-| `ENCRYPTION_KEY` | no | Reserved for encrypting Garmin OAuth tokens at rest. Leave empty until Phase 7. |
+| `ENCRYPTION_KEY` | no | Reserved for encrypting Garmin OAuth tokens at rest. Leave empty until official Garmin OAuth exists (deferred). |
 | `ALLOWED_HOSTS` | production | Comma-separated hostnames for `TrustedHostMiddleware`. |
 | `FRONTEND_URL` | yes | Browser origin allowed by CORS. Do not use `*`. `localhost` and `127.0.0.1` are both accepted. |
 | `VITE_API_BASE_URL` | no | Absolute API URL as seen by the browser. Leave empty in development; the Vite proxy is used instead. |
@@ -20,10 +20,13 @@ Copy `.env.example` to `.env` before starting Docker Compose. Never commit `.env
 | `POSTGRES_PORT` | no | Host port mapped to Postgres (default `5432`). |
 | `DATABASE_URL` | yes | SQLAlchemy URL. Must use `postgresql+asyncpg://`. Compose overrides the host to `postgres` inside the backend container. |
 | `FORWARDED_ALLOW_IPS` | production | IPs allowed to set `X-Forwarded-*` when running behind a reverse proxy. |
-| `GARMIN_CLIENT_ID` | later | Official Garmin Connect Developer Program client id. Empty until issued. |
-| `GARMIN_CLIENT_SECRET` | later | Official Garmin client secret. Never log or commit this value. |
-| `GARMIN_REDIRECT_URI` | later | OAuth redirect URI registered with Garmin. |
-| `ACTIVITY_PROVIDER` | no | `mock` (default) or `garmin`. Garmin is a stub until Phase 7 and will not call invented endpoints. |
+| `GARMIN_CLIENT_ID` | deferred | Official Garmin Connect Developer Program client id. Unused. Programme not accepting new apps as of 2026-08. |
+| `GARMIN_CLIENT_SECRET` | deferred | Official Garmin client secret. Unused. Never log or commit this value. |
+| `GARMIN_REDIRECT_URI` | deferred | OAuth redirect URI registered with Garmin. Unused. |
+| `STRAVA_CLIENT_ID` | Phase 8 | Official Strava OAuth client id. Unused; not required to boot. |
+| `STRAVA_CLIENT_SECRET` | Phase 8 | Official Strava client secret. Unused. |
+| `STRAVA_REDIRECT_URI` | Phase 8 | Strava OAuth redirect URI. Unused. |
+| `ACTIVITY_PROVIDER` | no | `mock` (default) or `garmin`. Garmin is a stub (deferred OAuth) and will not call invented endpoints. FIT import is a separate upload route. |
 | `PACELAB_SEED_EMAIL` | seed | Optional email for `python -m app.db.seed`. Defaults to `dev@example.com`. Must be an address `EmailStr` accepts, so reserved suffixes such as `.local` will not work. |
 | `PACELAB_SEED_PASSWORD` | seed | Optional password for the seed user. Defaults to the documented local-only value in the README. Never use this in production. |
 

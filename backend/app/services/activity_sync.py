@@ -70,7 +70,7 @@ async def sync_user_activities(
             await replace_provider_samples(session, existing, item)
             updated += 1
 
-    last_sync_at = await _record_sync(
+    last_sync_at = await record_provider_sync(
         session,
         user_id=user_id,
         provider_name=provider.provider_name,
@@ -91,7 +91,7 @@ async def sync_user_activities(
     )
 
 
-async def _record_sync(
+async def record_provider_sync(
     session: AsyncSession,
     *,
     user_id: uuid.UUID,

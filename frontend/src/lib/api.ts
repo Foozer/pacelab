@@ -13,6 +13,7 @@ import type {
   AerobicEfficiencyResponse,
   DashboardResponse,
   EasyRunningResponse,
+  FitImportResponse,
   TrendRangeKey,
   TrendsResponse,
 } from "@/types/activity";
@@ -57,7 +58,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const method = (options.method ?? "GET").toUpperCase();
   const headers = new Headers(options.headers);
   headers.set("Accept", "application/json");
-  if (options.body !== undefined && !headers.has("Content-Type")) {
+  if (options.body !== undefined && !headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
   if (method !== "GET" && method !== "HEAD") {
@@ -244,6 +245,17 @@ export function fetchAerobicEfficiency(): Promise<AerobicEfficiencyResponse> {
 
 export function syncActivities(): Promise<ActivitySyncResponse> {
   return request<ActivitySyncResponse>("/api/v1/activities/sync", { method: "POST" });
+}
+
+export function importFitFiles(files: File[]): Promise<FitImportResponse> {
+  const body = new FormData();
+  for (const file of files) {
+    body.append("files", file);
+  }
+  return request<FitImportResponse>("/api/v1/activities/import/fit", {
+    method: "POST",
+    body,
+  });
 }
 
 export async function downloadMyData(): Promise<void> {
