@@ -2,11 +2,11 @@
 
 PaceLab is a running analytics platform. It helps runners understand whether their fitness is actually improving — pace versus heart rate, easy running, volume, consistency, and long-term trends.
 
-This repository is a monorepo. The first user is the developer, but the architecture is intended for a future multi-user SaaS product.
+This repository is a monorepo. Local Compose is the default for development. Production is a friend-scale public HTTPS deploy (see [docs/deploy.md](docs/deploy.md)), not a general SaaS launch.
 
 Garmin Connect is **not** scraped. Live Garmin import waits until the official Connect Developer Program accepts new apps. Until then, upload `.fit` files from your watch or Garmin Connect. PaceLab does not log into Garmin.
 
-## Current status — Phase 8
+## Current status — Phase 9
 
 Completed:
 
@@ -22,8 +22,9 @@ Completed:
 - Draft Privacy Policy, Cookie Policy, and Terms pages (for legal review)
 - FIT-file upload: Garmin-recorded runs enter PaceLab as files, not a live Garmin link
 - Official Strava OAuth: connect in Settings, sync this user’s activities (`activity:read_all`)
+- Friend-scale production: public HTTPS (Caddy), SMTP mail, operator runbook
 
-Not started: live Garmin OAuth, or production deploy docs.
+Not started: live Garmin OAuth, billing, Strava webhooks, or a multi-host cluster.
 
 ## Requirements
 
@@ -59,7 +60,7 @@ Then open:
 
 The backend runs `alembic upgrade head` on startup.
 
-Create an account at http://localhost:5173/register (password at least 10 characters), or use the seed user below.
+Create an account at http://localhost:5173/register (password at least 10 characters), or use the seed user below. Local mail is the recording outbox unless you set `SMTP_*`.
 
 ### After changing dependencies
 
@@ -137,6 +138,8 @@ See [docs/configuration.md](docs/configuration.md) for every environment variabl
 
 See [docs/architecture.md](docs/architecture.md) for Garmin, security, and multi-user constraints.
 
+See [docs/deploy.md](docs/deploy.md) to put PaceLab on a VPS for friends (`https://<your-domain>`). Local Compose remains the development path.
+
 `ACTIVITY_PROVIDER` defaults to `mock`. Setting it to `garmin` selects the stub, which returns `501` until official OAuth exists. FIT upload does not use that setting.
 
 ## API
@@ -197,11 +200,13 @@ If the database is down the API returns `503` with `"status": "unhealthy"`. Erro
 }
 ```
 
-## Known limitations (Phase 8)
+## Known limitations (Phase 9)
 
-- No SMTP provider: verification and password-reset emails are recorded in memory. In `ENVIRONMENT=development` they appear on the account page. Tokens are never written to logs.
+- This is a private friends beta on one machine, not general availability and not hyperscale.
+- Production requires SMTP. Local development with empty SMTP still uses an in-memory outbox on the account page. Tokens are never written to logs.
 - Email confirmation is not required to sign in.
 - Rate limiting is in-process only (one API worker). A shared store can replace it later.
+- Strava webhooks are not implemented. Friends click Sync. First sync is a bounded recent window (90 days / page cap), not a full history backfill.
 - Aerobic efficiency and the 5K figure are application estimates, not lab or race results.
 - The default easy heart-rate band is 140–150 bpm and is a query parameter (also stored in the browser if you change it). It is not a personal Zone 2 and is not saved in PostgreSQL.
 - Activity samples omit GPS. FIT uploads and Strava streams drop position fields. FIT uploads do not keep the original file.
@@ -213,8 +218,7 @@ If the database is down the API returns `503` with `"status": "unhealthy"`. Erro
 - FIT upload is “import a file from your watch or Garmin Connect”, not “connected to Garmin”. Limits: 8 MB per file, 20 files per request.
 - `GarminActivityProvider` is a stub: it does not call Garmin and must not be given invented endpoints.
 - Official Garmin OAuth waits until the Connect Developer Program accepts new apps (paused as of 2026-08).
-- Strava webhooks are not implemented. First sync is a bounded recent window (90 days / page cap), not a full history backfill.
 - The same physical run can appear twice if imported as FIT and pulled from Strava. This phase does not merge them.
 - PaceLab is not a Strava or Garmin partner.
-- Production deployment runbooks land in a later phase.
+- Losing the VPS disk or `ENCRYPTION_KEY` means reconnecting Strava; keep off-box `pg_dump` backups.
 

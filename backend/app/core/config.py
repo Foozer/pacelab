@@ -29,6 +29,15 @@ class Settings(BaseSettings):
     database_url: str
     frontend_url: str = "http://localhost:5173"
     allowed_hosts: str = "localhost,127.0.0.1"
+    forwarded_allow_ips: str = "127.0.0.1"
+
+    # Transactional SMTP. Empty in local/dev → recording sender. Required in production.
+    # Prefer a provider (Resend, Postmark, Amazon SES) over a personal inbox.
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
 
     # Official Garmin OAuth — deferred (developer programme not accepting new apps
     # as of 2026-08). Unused at runtime. FIT upload is the Garmin-file path.
@@ -78,6 +87,10 @@ class Settings(BaseSettings):
         )
 
     @property
+    def smtp_configured(self) -> bool:
+        return bool(self.smtp_host.strip() and self.smtp_from.strip())
+
+    @property
     def cors_origins(self) -> list[str]:
         origin = self.frontend_url.rstrip("/")
         origins = [origin]
@@ -99,6 +112,17 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY must not be a placeholder in production")
         if len(self.secret_key) < 32:
             raise ValueError("SECRET_KEY must be at least 32 characters in production")
+        if not self.frontend_url.startswith("https://"):
+            raise ValueError("FRONTEND_URL must be https when ENVIRONMENT=production")
+        if not self.smtp_configured:
+            raise ValueError(
+                "SMTP_HOST and SMTP_FROM are required when ENVIRONMENT=production "
+                "(do not use the in-memory recording outbox in production)"
+            )
+        if not self.smtp_username.strip() or not self.smtp_password.strip():
+            raise ValueError(
+                "SMTP_USERNAME and SMTP_PASSWORD are required when ENVIRONMENT=production"
+            )
 
 
 @lru_cache

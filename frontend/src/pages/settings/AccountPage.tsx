@@ -16,6 +16,9 @@ export function AccountPage() {
   const [outbox, setOutbox] = useState<DevOutboxItem[] | null>(null);
 
   useEffect(() => {
+    if (import.meta.env.PROD) {
+      return;
+    }
     let cancelled = false;
     fetchDevOutbox()
       .then((result) => {
@@ -57,8 +60,10 @@ export function AccountPage() {
     try {
       const result = await resendVerification();
       setVerifyMessage(result.message);
-      const latest = await fetchDevOutbox();
-      setOutbox(latest?.emails ?? null);
+      if (!import.meta.env.PROD) {
+        const latest = await fetchDevOutbox();
+        setOutbox(latest?.emails ?? null);
+      }
     } catch (caught) {
       setVerifyMessage(formatAuthError(caught));
     }

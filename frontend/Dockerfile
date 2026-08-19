@@ -29,6 +29,9 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install
 COPY . .
+# Empty default: browser uses same-origin /api and /health (Caddy reverse-proxies).
+ARG VITE_API_BASE_URL=
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
 

@@ -1,0 +1,96 @@
+services:
+  caddy:
+    image: caddy:2.9-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      PACELAB_DOMAIN: ${PACELAB_DOMAIN:?Set PACELAB_DOMAIN to the public hostname}
+      CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL:?Set CADDY_ACME_EMAIL for Let's Encrypt}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pacelab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-pacelab}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pacelab} -d ${POSTGRES_DB:-pacelab}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Not published. Friends reach Caddy on 80/443 only.
+
+  backend:
+    build:
+      context: ./backend
+      target: production
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      ENVIRONMENT: production
+      DEBUG: "false"
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-pacelab}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-pacelab}
+      FORWARDED_ALLOW_IPS: ${FORWARDED_ALLOW_IPS:-*}
+    command:
+      [
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--proxy-headers",
+        "--forwarded-allow-ips",
+        "${FORWARDED_ALLOW_IPS:-*}",
+      ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    # One API process: in-process rate limits are the friend-scale default.
+
+  frontend:
+    build:
+      context: ./frontend
+      target: production
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+        VITE_API_BASE_URL: ""
+    restart: unless-stopped
+    # SPA only. Caddy proxies /api and /health to the backend (same public origin).
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:
