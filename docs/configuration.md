@@ -10,7 +10,7 @@ Copy `.env.example` to `.env` before starting Docker Compose. Never commit `.env
 | `LOG_LEVEL` | no | `DEBUG`, `INFO`, `WARNING`, or `ERROR`. Production logs JSON to stdout. |
 | `SECRET_KEY` | yes | Signing secret reserved for future signed values. Use a long random value in any deployed environment. Session cookies use unguessable tokens hashed at rest rather than this key. |
 | `ENCRYPTION_KEY` | to connect Strava | Fernet key for encrypting Strava OAuth tokens at rest. Not required to boot. Required to connect Strava. Generate with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. Reserved later for Garmin tokens too. |
-| `ALLOWED_HOSTS` | production | Comma-separated hostnames for `TrustedHostMiddleware`. |
+| `ALLOWED_HOSTS` | production | Comma-separated hostnames for `TrustedHostMiddleware` (e.g. `pacelab.health`). `127.0.0.1` and `localhost` are always appended so the Compose healthcheck can succeed. |
 | `FRONTEND_URL` | yes | Browser origin allowed by CORS. Do not use `*`. `localhost` and `127.0.0.1` are both accepted. Production must be `https://<domain>`. |
 | `VITE_API_BASE_URL` | no | Absolute API URL as seen by the browser. Leave empty in development and in production Compose so the browser uses same-origin `/api` (Vite proxy locally, Caddy in production). |
 | `VITE_API_PROXY_TARGET` | frontend dev | Backend URL used by the Vite dev-server proxy (`http://127.0.0.1:8000` locally, `http://backend:8000` in Compose). |

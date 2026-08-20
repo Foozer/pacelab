@@ -63,7 +63,7 @@ On the VPS, `cp .env.example .env` and set at least:
 | `SECRET_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
 | `ENCRYPTION_KEY` | `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"` — required to Connect Strava. **If you lose this key, friends must reconnect Strava.** Rotating it without a re-encrypt path has the same effect. |
 | `FRONTEND_URL` | `https://<your-domain>` |
-| `ALLOWED_HOSTS` | `<your-domain>` |
+| `ALLOWED_HOSTS` | `<your-domain>` (loopback is added automatically for Docker healthchecks) |
 | `FORWARDED_ALLOW_IPS` | `*` (only Caddy can reach the API on the Docker network) |
 | `POSTGRES_PASSWORD` | long random; **avoid `@ : / #`** so `DATABASE_URL` stays valid, or URL-encode |
 | `SMTP_*` | see Email below |

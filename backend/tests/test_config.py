@@ -45,3 +45,12 @@ def test_cors_origins_come_from_frontend_url() -> None:
         frontend_url="http://localhost:5173/",
     )
     assert settings.cors_origins == ["http://localhost:5173", "http://127.0.0.1:5173"]
+
+
+def test_allowed_hosts_always_include_loopback() -> None:
+    settings = Settings(
+        secret_key="a-sufficiently-long-secret",
+        database_url="postgresql+asyncpg://pacelab:pacelab@localhost:5432/pacelab",
+        allowed_hosts="pacelab.health",
+    )
+    assert settings.allowed_hosts_list == ["pacelab.health", "127.0.0.1", "localhost"]
