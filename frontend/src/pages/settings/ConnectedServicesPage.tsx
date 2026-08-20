@@ -96,27 +96,16 @@ export function ConnectedServicesPage() {
       <div>
         <h1 className="font-display text-3xl">Connected services</h1>
         <p className="mt-4 leading-relaxed text-ink-soft">
-          PaceLab does not ask for a Garmin or Strava username or password and does not scrape
-          those sites. Connecting Strava is a Strava connection, not a Garmin connection. Upload
-          FIT files on the Activities page to import a file from your watch. PaceLab is not a
-          Strava or Garmin partner.
+          Bring runs in by uploading FIT files or connecting Strava. PaceLab never asks for a
+          Strava password and does not scrape Strava. It is not a Strava partner.
         </p>
       </div>
 
       <div className="border border-rule bg-paper-2 px-4 py-4">
         <h2 className="font-display text-2xl">FIT file import</h2>
         <p className="mt-2 text-sm text-ink-soft">
-          Available now. Upload <code className="font-mono">.fit</code> files from Garmin Connect
-          or your device. This is a file import, not a live Garmin connection. Location data in
-          the file is discarded.
-        </p>
-      </div>
-
-      <div className="border border-rule bg-paper-2 px-4 py-4">
-        <h2 className="font-display text-2xl">Garmin Connect</h2>
-        <p className="mt-2 text-sm text-ink-soft">
-          Live connect is not available. Official OAuth is deferred. Do not enter a Garmin
-          password here.
+          Available now. Upload <code className="font-mono">.fit</code> files from your watch or
+          device on the Activities page. Location data in the file is discarded.
         </p>
       </div>
 
@@ -127,9 +116,7 @@ export function ConnectedServicesPage() {
         ) : !strava.configured ? (
           <p className="mt-2 text-sm text-ink-soft">Strava is not configured on this server.</p>
         ) : strava.needs_reconnect ? (
-          <p className="mt-2 text-sm text-ink-soft">
-            Strava access expired. Connect again. This is not a Garmin link.
-          </p>
+          <p className="mt-2 text-sm text-ink-soft">Strava access expired. Connect again.</p>
         ) : strava.connected ? (
           <p className="mt-2 text-sm text-ink-soft">
             Connected to Strava. Last sync: {strava.last_sync_at ?? "never"}. Syncing pulls your
@@ -187,8 +174,8 @@ export function ConnectedServicesPage() {
         >
           <h2 className="font-display text-2xl">Disconnect Strava</h2>
           <p className="text-sm text-ink-soft">
-            This revokes PaceLab’s Strava access and keeps your imported runs. It is not a Garmin
-            disconnect. Use Privacy → Delete running data if you want those runs gone too.
+            This revokes PaceLab’s Strava access and keeps your imported runs. Use Privacy → Delete
+            running data if you want those runs gone too.
           </p>
           <Field
             label="Current password"

@@ -14,8 +14,9 @@ export function PrivacyPolicyPage() {
         store a provider name and last sync time only.
       </p>
       <p className="leading-relaxed text-ink-soft">
-        Garmin Connect is not scraped. PaceLab does not collect Garmin usernames or
-        passwords. Live Garmin import, when it exists, will use official OAuth 2.0.
+        You can import runs as FIT files or connect Strava with official OAuth. PaceLab does not
+        collect Strava passwords and does not scrape Strava. Encrypted Strava tokens, when you
+        connect, are stored only for syncing your activities.
       </p>
       <p className="leading-relaxed text-ink-soft">
         You can download a copy of the data PaceLab stores, delete running data while

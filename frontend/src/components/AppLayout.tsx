@@ -100,8 +100,7 @@ export function AppLayout() {
       </main>
       <CookieBanner />
       <footer className="mt-auto border-t border-rule pt-6 text-sm text-ink-soft">
-        PaceLab · necessary session cookies only (<code>pacelab_session</code>,{" "}
-        <code>pacelab_csrf</code>) ·{" "}
+        PaceLab · private friends beta · necessary session cookies only ·{" "}
         <Link to="/privacy" className="underline">
           Privacy
         </Link>{" "}
@@ -113,7 +112,7 @@ export function AppLayout() {
         <Link to="/terms" className="underline">
           Terms
         </Link>{" "}
-        · Garmin integration uses official OAuth only
+        · not a Strava partner
       </footer>
     </div>
   );
