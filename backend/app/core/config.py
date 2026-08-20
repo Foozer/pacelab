@@ -72,6 +72,11 @@ class Settings(BaseSettings):
     @property
     def allowed_hosts_list(self) -> list[str]:
         hosts = [item.strip() for item in self.allowed_hosts.split(",") if item.strip()]
+        # Docker healthchecks hit 127.0.0.1 inside the container. Allow loopback in
+        # production so TrustedHost does not mark a healthy API as unhealthy.
+        for loopback in ("127.0.0.1", "localhost"):
+            if loopback not in hosts:
+                hosts.append(loopback)
         return hosts or ["localhost"]
 
     @property
