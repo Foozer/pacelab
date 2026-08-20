@@ -28,7 +28,9 @@ export function PrivacyPage() {
     setExportStatus(null);
     try {
       await downloadMyData();
-      setExportStatus("Download started. This file is a copy of what PaceLab stores, not a Garmin Connect dump.");
+      setExportStatus(
+        "Download started. This file is a copy of what PaceLab stores, not a Strava export.",
+      );
     } catch (caught) {
       setExportError(formatAuthError(caught));
     }
@@ -90,8 +92,7 @@ export function PrivacyPage() {
         <h2 className="font-display text-2xl">Download a copy of your PaceLab data</h2>
         <p className="mt-2 text-ink-soft">
           Includes your account email, activities, samples (no GPS is stored), and provider
-          sync timestamps. It does not include passwords, session secrets, or a Garmin
-          Connect export.
+          sync timestamps. It does not include passwords, session secrets, or a Strava export.
         </p>
         <FormError message={exportError} />
         {exportStatus ? (

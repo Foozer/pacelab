@@ -133,11 +133,9 @@ export function ActivitiesPage() {
       <div className="mt-8 border border-rule bg-paper-2 px-4 py-4">
         <h2 className="font-display text-2xl">Upload FIT files</h2>
         <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
-          Import a run from your watch or Garmin Connect by uploading the original{" "}
-          <code className="font-mono">.fit</code> file. PaceLab does not log into Garmin and is
-          not a live Garmin connection. In Garmin Connect, open an activity and export the original
-          file, or copy <code className="font-mono">.fit</code> files from the device activity
-          folder.
+          Import a run by uploading the original <code className="font-mono">.fit</code> file from
+          your watch or device activity folder. Location data in the file is discarded. For Strava
+          sync, use Settings → Connected services.
         </p>
         <form className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={onFitUpload}>
           <label className="block min-w-0 flex-1">

@@ -11,8 +11,8 @@ export function TermsOfServicePage() {
         not a race prediction.
       </p>
       <p className="leading-relaxed text-ink-soft">
-        You must not submit a Garmin password to PaceLab. Garmin data, when live import
-        exists, will come through official OAuth only.
+        You must not submit a Strava password to PaceLab. Strava access uses official OAuth only.
+        You may also upload FIT files you already have from your watch or device.
       </p>
       <p className="leading-relaxed text-ink-soft">
         These terms are a placeholder until they are reviewed. Do not treat this page as a
